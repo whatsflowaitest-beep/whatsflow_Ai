@@ -1,0 +1,54 @@
+import type { Metadata } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
+
+import { Toaster } from "@/components/ui/toaster";
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+});
+
+export const metadata: Metadata = {
+  title: "WhatsFlow AI — Stop Losing Leads. Let AI Handle Your WhatsApp 24/7.",
+  description:
+    "AI-powered WhatsApp lead conversion system that automatically replies, qualifies leads, and books appointments for small businesses.",
+  keywords: [
+    "WhatsApp automation",
+    "AI lead generation",
+    "appointment booking",
+    "small business",
+    "WhatsApp AI",
+  ],
+  openGraph: {
+    title: "WhatsFlow AI",
+    description: "Stop Losing Leads. Let AI Handle Your WhatsApp — 24/7.",
+    type: "website",
+  },
+  icons: {
+    icon: "/logo-robot.png",
+  },
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${plusJakartaSans.className} antialiased`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster />
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}
