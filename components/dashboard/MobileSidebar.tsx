@@ -5,13 +5,13 @@ import { useSidebar } from "@/context/SidebarContext";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { 
-  LayoutDashboard, 
-  Users, 
-  MessageCircle, 
-  Zap, 
-  BarChart3, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Users,
+  MessageCircle,
+  Zap,
+  BarChart3,
+  Settings,
   BookOpen,
   MessageSquare,
   ArrowUpRight
@@ -77,10 +77,10 @@ export function MobileSidebar() {
                 )} />
                 {item.label}
                 {isActive && (
-                    <motion.div
-                        layoutId="activeNavMobile"
-                        className="ml-auto w-1.5 h-1.5 rounded-full bg-[#16A34A]"
-                    />
+                  <motion.div
+                    layoutId="activeNavMobile"
+                    className="ml-auto w-1.5 h-1.5 rounded-full bg-[#16A34A]"
+                  />
                 )}
               </Link>
             );

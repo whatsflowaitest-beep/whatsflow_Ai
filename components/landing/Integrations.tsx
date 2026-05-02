@@ -21,8 +21,8 @@ interface IntegrationNodeProps {
 const IntegrationNode = ({ name, iconUrl, color, side, index, isHovered, onHover }: IntegrationNodeProps) => {
   return (
     <motion.div
-      initial={{ opacity: 0, x: side === "left" ? -40 : 40 }}
-      whileInView={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0, x: side === "left" ? -40 : 40, y: 0 }}
+      whileInView={{ opacity: 1, x: 0, y: 0 }}
       viewport={{ once: true }}
       onMouseEnter={() => onHover(true)}
       onMouseLeave={() => onHover(false)}
@@ -34,10 +34,12 @@ const IntegrationNode = ({ name, iconUrl, color, side, index, isHovered, onHover
         y: { duration: 4, repeat: Infinity, ease: "easeInOut", delay: index * 0.2 },
         scale: { duration: 0.2 }
       }}
-      className={`flex items-center gap-6 group cursor-pointer ${side === "right" ? "flex-row-reverse text-right" : ""}`}
+      className={`flex items-center gap-3 lg:gap-6 group cursor-pointer ${
+        side === "right" ? "lg:flex-row-reverse lg:text-right" : ""
+      } flex-row text-left`}
     >
       <div 
-        className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-white shadow-2xl border transition-all duration-500 overflow-hidden p-3 relative z-10 ${
+        className={`w-10 h-10 lg:w-14 lg:h-14 rounded-xl lg:rounded-2xl flex items-center justify-center bg-white shadow-lg lg:shadow-2xl border transition-all duration-500 overflow-hidden p-2 lg:p-3 relative z-10 ${
           isHovered ? "border-[#22c55e] scale-110" : "border-gray-100"
         }`}
         style={{ 
@@ -53,11 +55,11 @@ const IntegrationNode = ({ name, iconUrl, color, side, index, isHovered, onHover
         />
       </div>
       <div className="flex flex-col">
-        <h4 className={`font-bold text-lg leading-none mb-1.5 transition-colors duration-300 ${
+        <h4 className={`font-bold text-sm lg:text-lg leading-none mb-0.5 lg:mb-1.5 transition-colors duration-300 ${
           isHovered ? "text-[#16A34A]" : "text-[#0f172a]"
         }`}>{name}</h4>
         <div className={`h-1 w-0 bg-[#16A34A] rounded-full transition-all duration-300 ${isHovered ? "w-full" : "w-0"}`} />
-        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Ready for Flow</p>
+        <p className="text-[8px] lg:text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Ready for Flow</p>
       </div>
     </motion.div>
   );
@@ -83,7 +85,7 @@ export function Integrations() {
   ];
 
   return (
-    <section className="py-20 bg-white relative overflow-hidden" ref={containerRef}>
+    <section className="py-12 lg:py-20 bg-white relative overflow-hidden" ref={containerRef}>
       {/* Background Decor */}
       <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" 
            style={{ backgroundImage: "radial-gradient(#16A34A 1px, transparent 1px)", backgroundSize: "30px 30px" }} />
@@ -101,9 +103,9 @@ export function Integrations() {
           </p>
         </div>
 
-        <div className="relative flex items-center justify-center min-h-[550px]">
-          {/* SVG Connector Lines */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 1000 550">
+        <div className="relative flex flex-col lg:flex-row items-center justify-center min-h-[300px] lg:min-h-[550px] gap-8 lg:gap-0">
+          {/* SVG Connector Lines - Only visible on desktop */}
+          <svg className="hidden lg:block absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 1000 550">
             <defs>
               <filter id="glow-heavy">
                 <feGaussianBlur stdDeviation="3" result="blur"/>
@@ -194,14 +196,14 @@ export function Integrations() {
           </svg>
 
           {/* Central Hub Core */}
-          <div className="relative z-20 isolate">
+          <div className="relative z-20 isolate order-1 lg:order-none">
             <motion.div 
               initial={{ scale: 0, opacity: 0 }}
               animate={isInView ? { scale: 1, opacity: 1 } : {}}
               transition={{ type: "spring", damping: 15, delay: 0.3 }}
-              className="w-32 h-32 rounded-[32px] bg-[#0F1F0F] shadow-[0_0_50px_-10px_rgba(22,163,74,0.4)] flex items-center justify-center group relative border border-white/10"
+              className="w-24 h-24 lg:w-32 lg:h-32 rounded-2xl lg:rounded-[32px] bg-[#0F1F0F] shadow-[0_0_50px_-10px_rgba(22,163,74,0.4)] flex items-center justify-center group relative border border-white/10"
             >
-              <div className="w-16 h-16 relative z-10 transition-transform duration-500 group-hover:scale-110">
+              <div className="w-12 h-12 lg:w-16 lg:h-16 relative z-10 transition-transform duration-500 group-hover:scale-110">
                 <img src="/logo-robot.png" alt="Hub Core" className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(22,163,74,0.6)]" />
               </div>
 
@@ -209,9 +211,8 @@ export function Integrations() {
               {[1, 2, 3].map((orbit) => (
                 <div 
                   key={orbit}
-                  className="absolute pointer-events-none"
+                  className={`absolute pointer-events-none orbit-${orbit}`}
                   style={{ 
-                    inset: `-${orbit * 20}px`,
                     border: `1px dashed ${orbit === 1 ? 'rgba(22,163,74,0.3)' : 'rgba(22,163,74,0.1)'}`,
                     borderRadius: '45%',
                     animation: `spin ${10 + orbit * 5}s linear infinite${orbit === 2 ? ' reverse' : ''}`
@@ -221,32 +222,35 @@ export function Integrations() {
             </motion.div>
           </div>
 
-          {/* Left Side Integrations */}
-          <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between py-6 z-10 w-64">
-            {leftIntegrations.map((item, i) => (
-              <IntegrationNode 
-                key={item.name} 
-                {...item} 
-                side="left" 
-                index={i} 
-                isHovered={hoveredNode === item.name}
-                onHover={(h) => setHoveredNode(h ? item.name : null)}
-              />
-            ))}
-          </div>
+          {/* Integrations Grid - Responsive layout */}
+          <div className="w-full lg:contents grid grid-cols-2 gap-3 sm:gap-6 order-2 lg:order-none">
+            {/* Left/Top Side Integrations */}
+            <div className="lg:absolute lg:left-0 lg:top-0 lg:bottom-0 flex flex-col justify-between lg:py-6 z-10 lg:w-64 gap-6 lg:gap-0">
+              {leftIntegrations.map((item, i) => (
+                <IntegrationNode 
+                  key={item.name} 
+                  {...item} 
+                  side="left" 
+                  index={i} 
+                  isHovered={hoveredNode === item.name}
+                  onHover={(h) => setHoveredNode(h ? item.name : null)}
+                />
+              ))}
+            </div>
 
-          {/* Right Side Integrations */}
-          <div className="absolute right-0 top-0 bottom-0 flex flex-col justify-between py-6 z-10 w-64">
-            {rightIntegrations.map((item, i) => (
-              <IntegrationNode 
-                key={item.name} 
-                {...item} 
-                side="right" 
-                index={i} 
-                isHovered={hoveredNode === item.name}
-                onHover={(h) => setHoveredNode(h ? item.name : null)}
-              />
-            ))}
+            {/* Right/Bottom Side Integrations */}
+            <div className="lg:absolute lg:right-0 lg:top-0 lg:bottom-0 flex flex-col justify-between lg:py-6 z-10 lg:w-64 gap-6 lg:gap-0">
+              {rightIntegrations.map((item, i) => (
+                <IntegrationNode 
+                  key={item.name} 
+                  {...item} 
+                  side="right" 
+                  index={i + 4} 
+                  isHovered={hoveredNode === item.name}
+                  onHover={(h) => setHoveredNode(h ? item.name : null)}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -256,6 +260,14 @@ export function Integrations() {
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+        .orbit-1 { inset: -12px; }
+        .orbit-2 { inset: -24px; }
+        .orbit-3 { inset: -36px; }
+        @media (min-width: 1024px) {
+          .orbit-1 { inset: -20px; }
+          .orbit-2 { inset: -40px; }
+          .orbit-3 { inset: -60px; }
         }
       `}</style>
     </section>

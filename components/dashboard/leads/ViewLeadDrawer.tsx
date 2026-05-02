@@ -46,7 +46,7 @@ export function ViewLeadDrawer({ lead, open, onClose, onEdit, onDelete }: Props)
             <h2 className="text-2xl font-bold text-[#0F1F0F] mt-3">{lead.name}</h2>
             <div className="flex items-center gap-1.5 mt-1 text-[#6B7B6B]">
               <span className="text-sm font-medium">{lead.phone}</span>
-              <button 
+              <button
                 onClick={() => copyToClipboard(lead.phone)}
                 className="p-1 hover:text-[#16A34A] transition-colors"
                 title="Copy phone"
@@ -85,10 +85,10 @@ export function ViewLeadDrawer({ lead, open, onClose, onEdit, onDelete }: Props)
                 </h3>
                 <div className="grid grid-cols-1 gap-4 bg-[#F8FAF8] p-4 rounded-xl border border-[#E2EDE2]">
                   <DetailItem label="Full Name" value={lead.name} />
-                  <DetailItem 
-                    label="Phone" 
-                    value={lead.phone} 
-                    action={<button onClick={() => copyToClipboard(lead.phone)} className="ml-auto text-[#16A34A] hover:underline text-xs font-medium">Copy</button>} 
+                  <DetailItem
+                    label="Phone"
+                    value={lead.phone}
+                    action={<button onClick={() => copyToClipboard(lead.phone)} className="ml-auto text-[#16A34A] hover:underline text-xs font-medium">Copy</button>}
                   />
                   <DetailItem label="Email" value={lead.email || "—"} />
                   <DetailItem label="Lead Source" value={lead.source} />
@@ -121,29 +121,29 @@ export function ViewLeadDrawer({ lead, open, onClose, onEdit, onDelete }: Props)
 
             {/* Tab 2: Conversation */}
             <TabsContent value="conversation" className="m-0 flex flex-col bg-[#F0F7F0]/30 rounded-xl border border-[#D1E1D1] overflow-hidden">
-               <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-                 <div className="flex justify-center">
-                    <span className="text-[10px] bg-white text-[#6B7B6B] px-2 py-0.5 rounded shadow-sm">Yesterday</span>
-                 </div>
+              <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                <div className="flex justify-center">
+                  <span className="text-[10px] bg-white text-[#6B7B6B] px-2 py-0.5 rounded shadow-sm">Yesterday</span>
+                </div>
 
-                 <ChatBubble side="left" content={`Hi, I'm interested in ${lead.service}. Can I get more details?`} time="2:14 PM" />
-                 <ChatBubble side="right" content={`Hi ${lead.name.split(' ')[0]}! 👋 I'd love to help you with ${lead.service}. Are you looking for something soon?`} time="2:14 PM" />
-                 <ChatBubble side="left" content={`Yes, ideally ${lead.urgency.toLowerCase()}.`} time="2:15 PM" />
-                 <ChatBubble side="right" content={`Perfect! we have some openings available. Would you like to see our pricing or book a consultation?`} time="2:16 PM" />
-                 
-                 <div className="flex justify-center pt-2">
-                    <span className="text-[10px] bg-white text-[#6B7B6B] px-2 py-0.5 rounded shadow-sm">Today</span>
-                 </div>
-                 <ChatBubble side="left" content="I'll take a look at the booking link now." time="10:05 AM" />
-                 <ChatBubble side="right" content="Great! Let me know if you have any trouble with the link. 😊" time="10:06 AM" />
-               </div>
-               
-               <div className="p-3 bg-white border-t border-[#D1E1D1] text-center">
-                 <p className="text-[10px] text-[#6B7B6B] font-medium flex items-center justify-center gap-1">
-                   <Zap className="w-3 h-3 text-[#16A34A] fill-[#16A34A]" />
-                   Conversation managed by WhatsFlow AI
-                 </p>
-               </div>
+                <ChatBubble side="left" content={`Hi, I'm interested in ${lead.service}. Can I get more details?`} time="2:14 PM" />
+                <ChatBubble side="right" content={`Hi ${lead.name.split(' ')[0]}! 👋 I'd love to help you with ${lead.service}. Are you looking for something soon?`} time="2:14 PM" />
+                <ChatBubble side="left" content={`Yes, ideally ${lead.urgency.toLowerCase()}.`} time="2:15 PM" />
+                <ChatBubble side="right" content={`Perfect! we have some openings available. Would you like to see our pricing or book a consultation?`} time="2:16 PM" />
+
+                <div className="flex justify-center pt-2">
+                  <span className="text-[10px] bg-white text-[#6B7B6B] px-2 py-0.5 rounded shadow-sm">Today</span>
+                </div>
+                <ChatBubble side="left" content="I'll take a look at the booking link now." time="10:05 AM" />
+                <ChatBubble side="right" content="Great! Let me know if you have any trouble with the link. 😊" time="10:06 AM" />
+              </div>
+
+              <div className="p-3 bg-white border-t border-[#D1E1D1] text-center">
+                <p className="text-[10px] text-[#6B7B6B] font-medium flex items-center justify-center gap-1">
+                  <Zap className="w-3 h-3 text-[#16A34A] fill-[#16A34A]" />
+                  Conversation managed by WhatsFlow AI
+                </p>
+              </div>
             </TabsContent>
 
             {/* Tab 3: Activity */}

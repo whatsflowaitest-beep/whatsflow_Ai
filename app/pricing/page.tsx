@@ -25,12 +25,7 @@ export default function PricingPage() {
           <PricingSection />
         </section>
 
-        <section className="bg-[#f8fafc] py-24">
-          <div className="max-w-7xl mx-auto px-6">
-            <h2 className="text-4xl font-bold text-[#0f172a] text-center mb-16 font-[family-name:var(--font-sora)]">Frequently Asked Questions</h2>
-            <FAQ />
-          </div>
-        </section>
+        <FAQ />
       </main>
 
       <Footer />

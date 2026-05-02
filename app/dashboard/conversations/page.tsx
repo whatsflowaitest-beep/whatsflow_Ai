@@ -1,14 +1,13 @@
 import { ConversationViewer } from "@/components/dashboard/ConversationViewer";
+import { PageHeading } from "@/components/dashboard/PageHeading";
 
 export default function ConversationsPage() {
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-[#0F1F0F]">Conversations</h1>
-        <p className="text-sm text-[#6B7B6B] mt-0.5">
-          Monitor and manage your AI-powered WhatsApp conversations.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeading
+        title="Conversations"
+        description="Monitor and manage your AI-powered WhatsApp conversations in real-time."
+      />
       <ConversationViewer />
     </div>
   );

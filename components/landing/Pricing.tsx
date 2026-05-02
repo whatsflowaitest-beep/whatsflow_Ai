@@ -333,7 +333,7 @@ export function Pricing() {
                 <span className="text-3xl font-bold text-white">Custom</span>
 
               </div>
-              <Link href="mailto:hello@sebs.lk">
+              <Link href="/contact">
                 <Button className="w-full bg-[#16A34A] hover:bg-[#15803D] text-white whitespace-nowrap">
                   Contact Sales
                   <ArrowRight className="w-4 h-4" />

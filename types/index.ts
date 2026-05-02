@@ -34,6 +34,8 @@ export interface Lead {
   avatarColor: string;
   createdAt: string;
   lastActivity: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface LeadFormData {

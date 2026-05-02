@@ -12,10 +12,12 @@ import {
   LayoutDashboard,
   Users,
   MessageCircle,
-  Zap,
   BarChart3,
   Settings,
   BookOpen,
+  Megaphone,
+  Workflow,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -24,9 +26,9 @@ const mobileNavItems = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { label: "Leads", href: "/dashboard/leads", icon: Users },
   { label: "Chats", href: "/dashboard/conversations", icon: MessageCircle },
-  { label: "Knowledge", href: "/dashboard/knowledge", icon: BookOpen },
-  { label: "Automation", href: "/dashboard/automation", icon: Zap },
-  { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { label: "Automation", href: "/dashboard/automation", icon: Workflow },
+  { label: "Campaigns", href: "/dashboard/campaigns", icon: Megaphone },
+  { label: "Templates", href: "/dashboard/templates", icon: MessageSquare },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -35,7 +37,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const { isCollapsed } = useSidebar();
 
   return (
-    <div className="min-h-screen bg-[#F8FAF8]">
+    <div className="min-h-screen bg-[#F9FAFB] dark:bg-[#0B0F1A] text-[#111827] dark:text-[#F9FAFB] transition-colors duration-300">
       <Sidebar />
       <MobileSidebar />
       <TopBar />
@@ -43,7 +45,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       <main
         className={cn(
           "transition-all duration-300 ease-in-out pt-14",
-          isCollapsed ? "lg:pl-20" : "lg:pl-60"
+          isCollapsed ? "lg:pl-20" : "lg:pl-64"
         )}
       >
         <motion.div
@@ -59,7 +61,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Mobile bottom nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#E2EDE2] z-40">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#111827] border-t border-[#E5E7EB] dark:border-[#1F2937] z-40">
         <div className="flex items-center justify-around">
           {mobileNavItems.map((item) => {
             const isActive =

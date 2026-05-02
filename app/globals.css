@@ -67,7 +67,7 @@
   h4,
   h5,
   h6 {
-    @apply font-bold tracking-tight text-[#0F1F0F];
+    @apply font-bold tracking-tight text-[#111827] dark:text-[#F9FAFB];
   }
 
   h1 {

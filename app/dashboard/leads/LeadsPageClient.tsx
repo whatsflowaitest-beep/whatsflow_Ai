@@ -55,32 +55,28 @@ export default function LeadsPageClient() {
 
   const { addNotification } = useNotificationsContext();
 
-  // ── Modal/drawer state ────────────────────────────────────────────────────
   const [addOpen, setAddOpen] = useState(false);
   const [editLead, setEditLead] = useState<Lead | null>(null);
   const [viewLead, setViewLead] = useState<Lead | null>(null);
   const [deletingLead, setDeletingLead] = useState<Lead | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [page, setPage] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
 
-  // ── Open lead drawer from URL param (notification click) ─────────────────
   useEffect(() => {
     if (viewLeadId) {
       const lead = leads.find((l) => l.id === viewLeadId);
       if (lead) {
         setViewLead(lead);
       }
-      // Clean URL without navigation
       router.replace("/dashboard/leads", { scroll: false });
     }
   }, [viewLeadId, leads, router]);
 
-  // Reset to page 0 on filter/search change
   useEffect(() => {
     setPage(0);
   }, [searchQuery, activeFilter]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
   function handleAddLead(data: LeadFormData) {
     const newLead = addLead(data);
     addNotification({
@@ -97,10 +93,8 @@ export default function LeadsPageClient() {
   function handleUpdateLead(id: string, data: LeadFormData) {
     updateLead(id, data);
     toast("Lead updated successfully ✓", "success");
-    // Refresh viewLead if drawer is open
     if (viewLead?.id === id) {
-      const updated = leads.find(l => l.id === id); 
-      setViewLead(prev => prev ? {...prev, ...data, urgency: data.urgency as Lead['urgency']} : null);
+      setViewLead(prev => prev ? { ...prev, ...data, urgency: data.urgency as Lead['urgency'] } : null);
     }
   }
 
@@ -130,9 +124,50 @@ export default function LeadsPageClient() {
     setActiveFilter("all");
   }
 
+  function handleExportCSV() {
+    if (filteredLeads.length === 0) {
+      toast("No leads found to export", "error");
+      return;
+    }
+
+    setIsExporting(true);
+
+    setTimeout(() => {
+      const headers = ["Name", "Phone", "Email", "Service", "Urgency", "Stage", "Source", "Created At"];
+      const rows = filteredLeads.map(l => [
+        l.name,
+        l.phone,
+        l.email || "-",
+        l.service,
+        l.urgency,
+        l.stage,
+        l.source,
+        new Date(l.createdAt).toLocaleDateString()
+      ]);
+
+      const csvContent = [
+        headers.join(","),
+        ...rows.map(row => row.map(val => `"${val}"`).join(","))
+      ].join("\n");
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `whatsapp_leads_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setIsExporting(false);
+      toast(`${filteredLeads.length} leads exported successfully!`, "success");
+    }, 1500);
+  }
+
   return (
     <div className="space-y-6">
-      <PageHeading 
+      <PageHeading
         title="Leads Management"
         count={leads.length}
         description="Track and manage your WhatsApp leads in real-time"
@@ -140,13 +175,19 @@ export default function LeadsPageClient() {
           <>
             <Button
               variant="outline"
-              className="h-10 text-[#6B7B6B] border-[#E2EDE2] font-semibold"
+              onClick={handleExportCSV}
+              disabled={isExporting}
+              className="h-10 text-[#22C55E] border-[#E5E7EB] dark:border-[#1F2937] hover:bg-green-50 dark:hover:bg-[#22C55E]/10 font-bold rounded-xl shadow-sm transition-all active:scale-95 bg-white dark:bg-[#111827]"
             >
-              <Download className="w-4 h-4 mr-2" />
+              {isExporting ? (
+                <div className="w-4 h-4 border-2 border-[#22C55E]/30 border-t-[#22C55E] rounded-full animate-spin mr-2" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
               Export CSV
             </Button>
             <Button
-              className="bg-[#16A34A] hover:bg-[#15803D] text-white h-10 px-6 font-bold shadow-sm shadow-[#16A34A]/20"
+              className="bg-[#22C55E] hover:bg-[#16A34A] text-white h-10 px-6 font-bold rounded-xl shadow-md shadow-[#22C55E]/20 active:scale-95 transition-all"
               onClick={() => setAddOpen(true)}
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -159,10 +200,10 @@ export default function LeadsPageClient() {
       {/* Search + Stage Filters */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div className="relative w-full max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7B6B] pointer-events-none" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280] dark:text-[#9CA3AF] pointer-events-none" />
           <Input
             placeholder="Search by name, phone, service..."
-            className="pl-10 h-11 border-[#E2EDE2] focus-visible:ring-[#16A34A]/20 focus-visible:border-[#16A34A] rounded-xl font-medium"
+            className="pl-10 h-11 bg-white dark:bg-[#111827] border-[#E5E7EB] dark:border-[#1F2937] focus-visible:ring-[#22C55E]/20 focus-visible:border-[#22C55E] text-[#111827] dark:text-[#F9FAFB] rounded-xl font-medium"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -176,8 +217,8 @@ export default function LeadsPageClient() {
               className={cn(
                 "flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl whitespace-nowrap transition-all border shrink-0",
                 activeFilter === f.key
-                  ? "bg-[#16A34A] text-white border-[#16A34A] shadow-md shadow-[#16A34A]/10"
-                  : "bg-white border-[#E2EDE2] text-[#6B7B6B] hover:border-[#16A34A] hover:text-[#0F1F0F]"
+                  ? "bg-[#22C55E] text-white border-[#22C55E] shadow-md shadow-[#22C55E]/10"
+                  : "bg-white dark:bg-[#111827] border-[#E5E7EB] dark:border-[#1F2937] text-[#6B7280] dark:text-[#9CA3AF] hover:border-[#22C55E] hover:text-[#111827] dark:hover:text-[#F9FAFB]"
               )}
             >
               {f.label}
@@ -186,7 +227,7 @@ export default function LeadsPageClient() {
                   "text-[10px] font-bold px-2 py-0.5 rounded-lg",
                   activeFilter === f.key
                     ? "bg-white/20 text-white"
-                    : "bg-[#F0F7F0] text-[#16A34A]"
+                    : "bg-[#22C55E]/10 text-[#22C55E]"
                 )}
               >
                 {f.key === "all" ? leads.length : stageCounts[f.key] || 0}
