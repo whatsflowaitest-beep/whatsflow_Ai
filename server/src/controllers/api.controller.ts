@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { supabase } from '../index.js';
+import { AIService } from '../services/ai.service.js';
 
 export class APIController {
   /**
@@ -404,6 +405,184 @@ export class APIController {
         fs.writeFileSync(filePath, JSON.stringify(filtered, null, 2));
       }
       res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  // ── Catalog Products ─────────────────────────────────────────────────────
+
+  static async uploadCatalogImage(req: Request, res: Response) {
+    try {
+      const file = (req as any).file as Express.Multer.File | undefined;
+      if (!file) return res.status(400).json({ error: 'No file provided' });
+
+      const ext = file.originalname.split('.').pop()?.toLowerCase() ?? 'jpg';
+      const fileName = `catalog/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('catalog-images')
+        .upload(fileName, file.buffer, { contentType: file.mimetype, upsert: false });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('catalog-images')
+        .getPublicUrl(fileName);
+
+      res.json({ url: publicUrl });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  static async getCatalogProducts(req: Request, res: Response) {
+    try {
+      const { data, error } = await supabase
+        .from('catalog_products')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  static async createCatalogProduct(req: Request, res: Response) {
+    try {
+      const { name, description, price, compare_price, sku, category, stock, image_url, status } = req.body;
+      const { data, error } = await supabase
+        .from('catalog_products')
+        .insert([{ name, description, price, compare_price, sku, category, stock, image_url, status: status || 'active' }])
+        .select();
+      if (error) throw error;
+      res.status(201).json(data[0]);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  static async updateCatalogProduct(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { name, description, price, compare_price, sku, category, stock, image_url, status } = req.body;
+      const { data, error } = await supabase
+        .from('catalog_products')
+        .update({ name, description, price, compare_price, sku, category, stock, image_url, status, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select();
+      if (error) throw error;
+      res.json(data[0]);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  static async deleteCatalogProduct(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { error } = await supabase.from('catalog_products').delete().eq('id', id);
+      if (error) throw error;
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  // ── AI Agents ────────────────────────────────────────────────────────────
+
+  static async getAIAgents(req: Request, res: Response) {
+    try {
+      const { data, error } = await supabase
+        .from('ai_agents')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  static async createAIAgent(req: Request, res: Response) {
+    try {
+      const { name, role, instructions, tone } = req.body;
+      const { data, error } = await supabase
+        .from('ai_agents')
+        .insert([{ name, role, instructions, tone, status: 'active' }])
+        .select();
+      if (error) throw error;
+      res.status(201).json(data[0]);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  static async updateAIAgent(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { name, role, instructions, tone } = req.body;
+      const { data, error } = await supabase
+        .from('ai_agents')
+        .update({ name, role, instructions, tone, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select();
+      if (error) throw error;
+      res.json(data[0]);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  static async deleteAIAgent(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { error } = await supabase.from('ai_agents').delete().eq('id', id);
+      if (error) throw error;
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  static async toggleAIAgentStatus(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const { data, error } = await supabase
+        .from('ai_agents')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select();
+      if (error) throw error;
+      res.json(data[0]);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  static async chatWithAIAgent(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { message, history = [] } = req.body;
+
+      const { data: agent, error } = await supabase
+        .from('ai_agents')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+
+      const systemPrompt =
+        `You are an AI agent named "${agent.name}".\n` +
+        `Role: ${agent.role}\n` +
+        `Tone: ${agent.tone}\n` +
+        `Instructions: ${agent.instructions}\n\n` +
+        `Keep every reply concise (2-3 sentences max). Stay in character.`;
+
+      const reply = await AIService.getAgentResponse(message, systemPrompt, history);
+      res.json({ reply });
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
     }

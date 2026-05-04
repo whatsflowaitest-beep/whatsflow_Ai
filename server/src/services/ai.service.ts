@@ -49,6 +49,35 @@ export class AIService {
   }
 
   /**
+   * Get a response from an AI agent persona (with conversation history)
+   */
+  static async getAgentResponse(
+    message: string,
+    systemPrompt: string,
+    history: { role: 'user' | 'assistant'; content: string }[] = []
+  ) {
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...history,
+          { role: 'user', content: message },
+        ],
+        max_tokens: 200,
+      });
+      return response.choices[0]?.message?.content || 'No response generated';
+    } catch (error) {
+      console.error('Agent AI Error:', error);
+      // Fall back to Gemini if OpenAI fails
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const fullPrompt = `${systemPrompt}\n\nUser: ${message}\nAssistant:`;
+      const result = await model.generateContent(fullPrompt);
+      return result.response.text();
+    }
+  }
+
+  /**
    * Generate embeddings for RAG (using OpenAI)
    */
   static async generateEmbeddings(text: string) {

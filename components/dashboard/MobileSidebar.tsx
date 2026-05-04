@@ -2,7 +2,7 @@
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useSidebar } from "@/context/SidebarContext";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -14,8 +14,10 @@ import {
   Settings,
   BookOpen,
   MessageSquare,
-  ArrowUpRight
+  ArrowUpRight,
+  LogOut
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -32,6 +34,7 @@ const navItems = [
 export function MobileSidebar() {
   const { isMobileOpen, setIsMobileOpen } = useSidebar();
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
@@ -116,7 +119,19 @@ export function MobileSidebar() {
                 john@business.com
               </p>
             </div>
+            <button
+              onClick={() => {
+                setIsMobileOpen(false);
+                localStorage.removeItem("isLoggedIn");
+                router.push("/auth/login");
+              }}
+              className="p-2 rounded-md text-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-900/40 dark:hover:bg-red-800/50 hover:text-red-600 transition-all shrink-0 flex items-center justify-center"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
+
         </div>
       </SheetContent>
     </Sheet>

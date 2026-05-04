@@ -25,6 +25,7 @@ export interface UseLeadsReturn {
   leads: Lead[];
   addLead: (data: LeadFormData) => Lead;
   updateLead: (id: string, data: LeadFormData) => void;
+  moveLeadToStage: (id: string, stage: LeadStage) => void;
   deleteLead: (id: string) => void;
   bulkDelete: (ids: string[]) => void;
   // Filtered / sorted view
@@ -94,6 +95,12 @@ export function useLeads(): UseLeadsReturn {
             }
           : lead
       )
+    );
+  }, []);
+
+  const moveLeadToStage = useCallback((id: string, stage: LeadStage): void => {
+    setLeads(prev =>
+      prev.map(l => l.id === id ? { ...l, stage, lastActivity: new Date().toISOString() } : l)
     );
   }, []);
 
@@ -180,6 +187,7 @@ export function useLeads(): UseLeadsReturn {
     leads,
     addLead,
     updateLead,
+    moveLeadToStage,
     deleteLead,
     bulkDelete,
     filteredLeads,

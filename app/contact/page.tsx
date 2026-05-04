@@ -58,7 +58,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h4 className="text-sm font-extrabold text-[#0F1F0F]">Email Address</h4>
-                    <p className="text-xs font-bold text-[#6B7B6B] mt-1 select-all">hello@sebs.lk</p>
+                    <p className="text-xs font-bold text-[#6B7B6B] mt-1 select-all">hello@sebslabs.com</p>
                   </div>
                 </div>
 

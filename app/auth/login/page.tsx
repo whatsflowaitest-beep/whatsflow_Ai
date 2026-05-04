@@ -24,6 +24,7 @@ export default function LoginPage() {
     // Temporary logic
     setTimeout(() => {
       if (email === "test@whatsflowai.online" && password === "Test@12") {
+        localStorage.setItem("isLoggedIn", "true");
         router.push("/dashboard");
       } else {
         setError("Invalid email or password. Please try again.");
@@ -31,6 +32,7 @@ export default function LoginPage() {
       }
     }, 800);
   };
+
 
   return (
     <div className="min-h-screen bg-[#F8FAF8] flex flex-col items-center justify-center p-4">

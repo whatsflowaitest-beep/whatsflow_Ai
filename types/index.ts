@@ -1,7 +1,9 @@
 export type LeadStage =
   | "New"
+  | "Contacted"
   | "Qualifying"
   | "Qualified"
+  | "Proposal"
   | "Booked"
   | "Lost";
 

@@ -42,6 +42,37 @@ CREATE TABLE knowledge_base (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Supabase Storage: create a public bucket named "catalog-images"
+-- Dashboard → Storage → New bucket → Name: catalog-images → Public: ON
+
+-- Catalog Products Table
+CREATE TABLE catalog_products (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  description TEXT,
+  price DECIMAL(10, 2) NOT NULL DEFAULT 0,
+  compare_price DECIMAL(10, 2),
+  sku TEXT,
+  category TEXT NOT NULL DEFAULT 'General',
+  stock INTEGER NOT NULL DEFAULT 0,
+  image_url TEXT,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'archived')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- AI Agents Table
+CREATE TABLE ai_agents (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  role TEXT NOT NULL,
+  instructions TEXT NOT NULL,
+  tone TEXT NOT NULL DEFAULT 'Professional',
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Function for similarity search
 CREATE OR REPLACE FUNCTION match_knowledge (
   query_embedding VECTOR(1536),

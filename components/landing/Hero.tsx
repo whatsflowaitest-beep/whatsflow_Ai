@@ -54,14 +54,14 @@ export function Hero() {
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Main large green glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#dcfce7] rounded-full blur-[120px] opacity-40 mix-blend-multiply" />
-        
+
         {/* Additional decorative blobs */}
         <div className="absolute -top-[10%] -left-[5%] w-[400px] h-[400px] bg-[#22c55e]/5 rounded-full blur-[80px]" />
         <div className="absolute -bottom-[20%] right-[0%] w-[500px] h-[500px] bg-[#16a34a]/10 rounded-full blur-[100px]" />
 
         {/* Subtle Mesh/Grid pattern */}
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.02] pointer-events-none" />
-        
+
         {/* Bottom fading-to-white transition */}
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white to-transparent" />
       </div>
@@ -158,10 +158,10 @@ export function Hero() {
                   <div className="bg-white border-b px-6 py-5 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-11 h-11 shrink-0">
-                        <img 
-                          src="/logo-robot.png" 
-                          alt="Logo" 
-                          className="w-full h-full object-contain" 
+                        <img
+                          src="/logo-robot.png"
+                          alt="Logo"
+                          className="w-full h-full object-contain"
                         />
                       </div>
                       <div>
@@ -217,54 +217,54 @@ export function Hero() {
               <motion.div
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                className="absolute -top-6 -right-12 bg-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-gray-50"
+                className="absolute -top-6 -right-12 bg-white px-3 py-1.5 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl flex items-center gap-2 sm:gap-3 border border-gray-50"
               >
-                <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-500">
-                  <Zap className="w-4 h-4" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-green-50 flex items-center justify-center text-green-500 shrink-0">
+                  <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">Replied in</p>
-                  <p className="text-xs font-extrabold text-[#0f172a]">0.8s Seconds</p>
+                  <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-0.5 sm:mb-1">Replied in</p>
+                  <p className="text-[11px] sm:text-xs font-extrabold text-[#0f172a]">0.8s Seconds</p>
                 </div>
               </motion.div>
 
               <motion.div
                 animate={{ y: [0, 10, 0] }}
                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                className="absolute top-1/2 -left-16 bg-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-gray-50"
+                className="absolute top-1/2 -left-16 bg-white px-3 py-1.5 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl flex items-center gap-2 sm:gap-3 border border-gray-50"
               >
-                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
-                  <UserCheck className="w-4 h-4" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
+                  <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">Lead Status</p>
-                  <p className="text-xs font-extrabold text-[#0f172a]">Highly Qualified</p>
+                  <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-0.5 sm:mb-1">Lead Status</p>
+                  <p className="text-[11px] sm:text-xs font-extrabold text-[#0f172a]">Highly Qualified</p>
                 </div>
               </motion.div>
 
               <motion.div
                 animate={{ x: [0, 8, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute bottom-12 -right-16 bg-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-gray-50"
+                className="absolute bottom-12 -right-16 bg-white px-3 py-1.5 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl flex items-center gap-2 sm:gap-3 border border-gray-50"
               >
-                <div className="w-8 h-8 rounded-full bg-yellow-50 flex items-center justify-center text-yellow-600">
-                  <CheckCircle2 className="w-4 h-4" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-yellow-50 flex items-center justify-center text-yellow-600 shrink-0">
+                  <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">Appointment</p>
-                  <p className="text-xs font-extrabold text-[#0f172a]">Auto-Booked</p>
+                  <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-0.5 sm:mb-1">Appointment</p>
+                  <p className="text-[11px] sm:text-xs font-extrabold text-[#0f172a]">Auto-Booked</p>
                 </div>
               </motion.div>
 
               <motion.div
                 animate={{ y: [0, -8, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-                className="absolute -bottom-6 left-0 bg-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-gray-100"
+                className="absolute -bottom-6 left-0 bg-white px-3 py-1.5 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl flex items-center gap-2 sm:gap-3 border border-gray-100"
               >
-                <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
-                  <Globe className="w-4 h-4" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
+                  <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
-                <p className="text-xs font-extrabold text-[#0f172a]">AI Online 24/7</p>
+                <p className="text-[11px] sm:text-xs font-extrabold text-[#0f172a]">AI Online 24/7</p>
               </motion.div>
             </motion.div>
           </motion.div>

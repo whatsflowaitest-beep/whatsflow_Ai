@@ -34,12 +34,12 @@ const IntegrationNode = ({ name, iconUrl, color, side, index, isHovered, onHover
         y: { duration: 4, repeat: Infinity, ease: "easeInOut", delay: index * 0.2 },
         scale: { duration: 0.2 }
       }}
-      className={`flex items-center gap-3 lg:gap-6 group cursor-pointer ${
+      className={`flex items-center gap-4 lg:gap-6 group cursor-pointer ${
         side === "right" ? "lg:flex-row-reverse lg:text-right" : ""
-      } flex-row text-left`}
+      } flex-row text-left bg-white/50 backdrop-blur-sm sm:bg-transparent p-3 sm:p-0 rounded-2xl border border-gray-100 sm:border-transparent`}
     >
       <div 
-        className={`w-10 h-10 lg:w-14 lg:h-14 rounded-xl lg:rounded-2xl flex items-center justify-center bg-white shadow-lg lg:shadow-2xl border transition-all duration-500 overflow-hidden p-2 lg:p-3 relative z-10 ${
+        className={`w-11 h-11 lg:w-14 lg:h-14 rounded-xl lg:rounded-2xl flex items-center justify-center bg-white shadow-lg lg:shadow-2xl border transition-all duration-500 overflow-hidden p-2 lg:p-3 relative z-10 ${
           isHovered ? "border-[#22c55e] scale-110" : "border-gray-100"
         }`}
         style={{ 
@@ -55,13 +55,14 @@ const IntegrationNode = ({ name, iconUrl, color, side, index, isHovered, onHover
         />
       </div>
       <div className="flex flex-col">
-        <h4 className={`font-bold text-sm lg:text-lg leading-none mb-0.5 lg:mb-1.5 transition-colors duration-300 ${
+        <h4 className={`font-bold text-base lg:text-lg leading-none mb-1 lg:mb-1.5 transition-colors duration-300 ${
           isHovered ? "text-[#16A34A]" : "text-[#0f172a]"
         }`}>{name}</h4>
         <div className={`h-1 w-0 bg-[#16A34A] rounded-full transition-all duration-300 ${isHovered ? "w-full" : "w-0"}`} />
-        <p className="text-[8px] lg:text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Ready for Flow</p>
+        <p className="text-[10px] lg:text-[11px] text-gray-400 font-black uppercase tracking-widest mt-1">Ready for Flow</p>
       </div>
     </motion.div>
+
   );
 };
 
@@ -223,9 +224,9 @@ export function Integrations() {
           </div>
 
           {/* Integrations Grid - Responsive layout */}
-          <div className="w-full lg:contents grid grid-cols-2 gap-3 sm:gap-6 order-2 lg:order-none">
+          <div className="w-full lg:contents grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 order-2 lg:order-none">
             {/* Left/Top Side Integrations */}
-            <div className="lg:absolute lg:left-0 lg:top-0 lg:bottom-0 flex flex-col justify-between lg:py-6 z-10 lg:w-64 gap-6 lg:gap-0">
+            <div className="lg:absolute lg:left-0 lg:top-0 lg:bottom-0 flex flex-col justify-between lg:py-6 z-10 lg:w-64 gap-4 sm:gap-6 lg:gap-0">
               {leftIntegrations.map((item, i) => (
                 <IntegrationNode 
                   key={item.name} 
@@ -239,7 +240,7 @@ export function Integrations() {
             </div>
 
             {/* Right/Bottom Side Integrations */}
-            <div className="lg:absolute lg:right-0 lg:top-0 lg:bottom-0 flex flex-col justify-between lg:py-6 z-10 lg:w-64 gap-6 lg:gap-0">
+            <div className="lg:absolute lg:right-0 lg:top-0 lg:bottom-0 flex flex-col justify-between lg:py-6 z-10 lg:w-64 gap-4 sm:gap-6 lg:gap-0">
               {rightIntegrations.map((item, i) => (
                 <IntegrationNode 
                   key={item.name} 
@@ -254,6 +255,7 @@ export function Integrations() {
           </div>
         </div>
       </div>
+
 
 
       <style jsx>{`
