@@ -50,11 +50,67 @@ export async function middleware(request: NextRequest) {
   // Static assets and webhooks skip all auth middleware
   if (isWebhook(pathname)) return NextResponse.next()
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  // Gracefully handle missing configuration without crashing the entire app
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('[Middleware] Warning: Missing Supabase environment variables.')
+    
+    // If hitting a public landing page, allow it to load
+    if (isPublic(pathname)) {
+      return NextResponse.next()
+    }
+
+    const isApiRoute = pathname.startsWith('/api/')
+    if (isApiRoute) {
+      return new NextResponse(
+        JSON.stringify({
+          error: 'Configuration Error',
+          message: 'Missing Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY). Please add them to your project environment variables.',
+        }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      )
+    }
+
+    return new NextResponse(
+      `<!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Configuration Required | WhatsFlow AI</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f9fafb; color: #1f2937; }
+          .container { max-width: 500px; padding: 2.5rem; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.05); border: 1px solid #f3f4f6; }
+          h2 { color: #ef4444; margin-top: 0; font-size: 1.5rem; font-weight: 600; letter-spacing: -0.025em; }
+          p { font-size: 0.95rem; color: #4b5563; line-height: 1.6; }
+          .code-box { background: #f3f4f6; padding: 1rem; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.85rem; color: #111827; margin: 1.5rem 0; border: 1px solid #e5e7eb; line-height: 1.8; font-weight: 500; text-align: left; }
+          .footer { font-size: 0.85rem; color: #9ca3af; margin-top: 1.5rem; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h2>Missing Configuration</h2>
+          <p>The application has successfully deployed, but it is currently missing the required Supabase credentials in the environment settings.</p>
+          <div class="code-box">
+            • NEXT_PUBLIC_SUPABASE_URL<br/>
+            • NEXT_PUBLIC_SUPABASE_ANON_KEY
+          </div>
+          <p>Please add these variables to your <strong>Vercel Project Settings &gt; Environment Variables</strong> and trigger a fresh redeployment.</p>
+          <div class="footer">WhatsFlow AI • Infrastructure Safety Guard</div>
+        </div>
+      </body>
+      </html>`,
+      { status: 500, headers: { 'content-type': 'text/html' } }
+    )
+  }
+
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         get(name: string) {
