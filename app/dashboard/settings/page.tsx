@@ -80,6 +80,26 @@ function IntegrationCard({
 
 const invoices: Array<{ date: string, amount: string, status: string }> = [];
 
+interface SubscriptionPlan {
+  name: string;
+  price_monthly: string | number;
+}
+
+interface ActiveSubscription {
+  plan?: SubscriptionPlan | null;
+  status?: string;
+}
+
+interface Config {
+  business_name: string;
+  industry: string;
+  whatsapp_number: string;
+  support_email: string;
+  full_name: string;
+  personal_email: string;
+  active_subscription: ActiveSubscription | null;
+}
+
 export default function SettingsPage() {
   return (
     <Suspense
@@ -117,7 +137,7 @@ function SettingsPageContent() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
 
-  const [config, setConfig] = useState<any>({
+  const [config, setConfig] = useState<Config>({
     business_name: "",
     industry: "dental",
     whatsapp_number: "",
@@ -138,7 +158,7 @@ function SettingsPageContent() {
       try {
         const data = await apiFetch('/api/settings');
         if (data) {
-          setConfig(prev => ({ ...prev, ...data }));
+          setConfig((prev: Config) => ({ ...prev, ...data }));
         }
       } catch (err) {
         console.error("Failed to load settings:", err);
@@ -149,8 +169,8 @@ function SettingsPageContent() {
     loadSettings();
   }, []);
 
-  const handleUpdate = (key: string, value: any) => {
-    setConfig(prev => ({ ...prev, [key]: value }));
+  const handleUpdate = (key: keyof Config, value: any) => {
+    setConfig((prev: Config) => ({ ...prev, [key]: value }));
   };
 
   const saveSettings = async () => {
