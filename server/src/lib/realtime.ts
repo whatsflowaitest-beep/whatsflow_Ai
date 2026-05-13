@@ -60,8 +60,8 @@ export async function createRealtimeServer(httpServer: HttpServer): Promise<Sock
 
   await Promise.all([pubClient.connect(), subClient.connect()])
 
-  pubClient.on('error', (e) => logger.error('[realtime:redis-pub] Error', { err: e.message }))
-  subClient.on('error', (e) => logger.error('[realtime:redis-sub] Error', { err: e.message }))
+  pubClient.on('error', (e: any) => logger.error('[realtime:redis-pub] Error', { err: e.message }))
+  subClient.on('error', (e: any) => logger.error('[realtime:redis-sub] Error', { err: e.message }))
 
   const supabase = createSupabaseClient(
     process.env.SUPABASE_URL!,
@@ -221,7 +221,7 @@ export function broadcastNewMessage(
 // ── Security Helper ───────────────────────────────────────────────────────────
 
 async function verifyConversationAccess(
-  supabase: ReturnType<typeof createSupabaseClient>,
+  supabase: any,
   tenantId: string,
   conversationId: string
 ): Promise<boolean> {

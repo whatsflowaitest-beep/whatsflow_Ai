@@ -47,9 +47,9 @@ export type OutboundPayload = TextMessage | TemplateMessage | MediaMessage
 
 export interface SendResult {
   success:      boolean
-  waMessageId?: string
-  error?:       string
-  statusCode?:  number
+  waMessageId?: string | undefined
+  error?:       string | undefined
+  statusCode?:  number | undefined
 }
 
 // ── Token resolution ──────────────────────────────────────────────────────────

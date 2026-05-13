@@ -140,7 +140,7 @@ app.use((_req, res) => {
 })
 
 // ── Error Handler (Sentry then generic) ──────────────────────────────────────
-app.use(await sentryErrorHandler())
+app.use((await sentryErrorHandler()) as any)
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   logger.error('Unhandled error', { err: err.message })

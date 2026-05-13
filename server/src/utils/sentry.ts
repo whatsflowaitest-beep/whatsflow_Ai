@@ -19,16 +19,10 @@
 // We use dynamic import so the server doesn't crash if @sentry/node isn't installed yet.
 // Install with: npm install @sentry/node @sentry/tracing
 
-let Sentry: typeof import('@sentry/node') | null = null
+import * as Sentry from '@sentry/node'
 
 async function loadSentry() {
-  if (Sentry) return Sentry
-  try {
-    Sentry = await import('@sentry/node')
-    return Sentry
-  } catch {
-    return null
-  }
+  return Sentry
 }
 
 export async function initSentry(): Promise<void> {
@@ -58,10 +52,10 @@ export async function initSentry(): Promise<void> {
       'Circuit breaker OPEN',
     ],
 
-    beforeSend(event) {
+    beforeSend(event: any) {
       // Scrub sensitive fields from breadcrumbs
       if (event.breadcrumbs?.values) {
-        event.breadcrumbs.values = event.breadcrumbs.values.map((b) => {
+        event.breadcrumbs.values = event.breadcrumbs.values.map((b: any) => {
           if (b.data?.['Authorization']) b.data['Authorization'] = '[REDACTED]'
           if (b.data?.access_token)     b.data.access_token     = '[REDACTED]'
           return b
@@ -78,12 +72,12 @@ export async function initSentry(): Promise<void> {
 
 export async function captureError(
   err:     Error,
-  context: { tenantId?: string; correlationId?: string; jobId?: string; [key: string]: unknown } = {}
+  context: { tenantId?: string | undefined; correlationId?: string | undefined; jobId?: string | undefined; [key: string]: unknown } = {}
 ): Promise<void> {
   const sentry = await loadSentry()
   if (!sentry || !process.env.SENTRY_DSN) return
 
-  sentry.withScope((scope) => {
+  sentry.withScope((scope: any) => {
     if (context.tenantId)      scope.setTag('tenant_id',       context.tenantId!)
     if (context.correlationId) scope.setTag('correlation_id',  context.correlationId!)
     if (context.jobId)         scope.setTag('job_id',          context.jobId!)
@@ -117,7 +111,7 @@ export async function captureCircuitOpen(serviceName: string): Promise<void> {
 
 // Add this as the LAST middleware in Express:
 // app.use(sentryErrorHandler())
-export async function sentryErrorHandler() {
+export async function sentryErrorHandler(): Promise<any> {
   const sentry = await loadSentry()
   if (!sentry) {
     return (_err: Error, _req: unknown, _res: unknown, next: Function) => next(_err)
@@ -127,7 +121,7 @@ export async function sentryErrorHandler() {
 
 // ── Request Handler ───────────────────────────────────────────────────────────
 // Wrap your Express app: app.use(await sentryRequestHandler())
-export async function sentryRequestHandler() {
+export async function sentryRequestHandler(): Promise<any> {
   const sentry = await loadSentry()
   if (!sentry) {
     return (_req: unknown, _res: unknown, next: Function) => next()

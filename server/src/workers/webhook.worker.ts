@@ -426,7 +426,7 @@ async function processWebhookJob(job: Job<WebhookJobData>): Promise<void> {
     await markWebhookProcessed(messageId)
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err)
-    logger.error(`[worker] Job ${job.id} processing error:`, errMsg)
+    logger.error(`[worker] Job ${job.id} processing error:`, { err: errMsg })
     await markWebhookFailed(messageId, errMsg)
     throw err // Re-throw so BullMQ retries
   }
