@@ -98,6 +98,7 @@ interface Config {
   full_name: string;
   personal_email: string;
   active_subscription: ActiveSubscription | null;
+  [key: string]: any;
 }
 
 export default function SettingsPage() {
