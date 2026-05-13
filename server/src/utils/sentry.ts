@@ -1,3 +1,4 @@
+import type { RequestHandler } from 'express'
 /**
  * Sentry Integration
  *
@@ -19,10 +20,16 @@
 // We use dynamic import so the server doesn't crash if @sentry/node isn't installed yet.
 // Install with: npm install @sentry/node @sentry/tracing
 
-import * as Sentry from '@sentry/node'
+let Sentry: typeof import('@sentry/node') | null = null
 
 async function loadSentry() {
-  return Sentry
+  if (Sentry) return Sentry
+  try {
+    Sentry = await import('@sentry/node')
+    return Sentry
+  } catch {
+    return null
+  }
 }
 
 export async function initSentry(): Promise<void> {
@@ -40,8 +47,8 @@ export async function initSentry(): Promise<void> {
 
   sentry.init({
     dsn,
-    environment:    process.env.NODE_ENV ?? 'development',
-    release:        process.env.npm_package_version,
+    environment: process.env.NODE_ENV ?? 'development',
+    release: process.env.npm_package_version,
     tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_RATE ?? '0.1'),
 
     // Ignore non-actionable errors
@@ -52,15 +59,7 @@ export async function initSentry(): Promise<void> {
       'Circuit breaker OPEN',
     ],
 
-    beforeSend(event: any) {
-      // Scrub sensitive fields from breadcrumbs
-      if (event.breadcrumbs?.values) {
-        event.breadcrumbs.values = event.breadcrumbs.values.map((b: any) => {
-          if (b.data?.['Authorization']) b.data['Authorization'] = '[REDACTED]'
-          if (b.data?.access_token)     b.data.access_token     = '[REDACTED]'
-          return b
-        })
-      }
+    beforeSend(event) {
       return event
     },
   })
@@ -71,16 +70,16 @@ export async function initSentry(): Promise<void> {
 // ── Error Reporting Helpers ───────────────────────────────────────────────────
 
 export async function captureError(
-  err:     Error,
-  context: { tenantId?: string | undefined; correlationId?: string | undefined; jobId?: string | undefined; [key: string]: unknown } = {}
+  err: Error,
+  context: { tenantId?: string; correlationId?: string; jobId?: string;[key: string]: unknown } = {}
 ): Promise<void> {
   const sentry = await loadSentry()
   if (!sentry || !process.env.SENTRY_DSN) return
 
-  sentry.withScope((scope: any) => {
-    if (context.tenantId)      scope.setTag('tenant_id',       context.tenantId!)
-    if (context.correlationId) scope.setTag('correlation_id',  context.correlationId!)
-    if (context.jobId)         scope.setTag('job_id',          context.jobId!)
+  sentry.withScope((scope) => {
+    if (context.tenantId) scope.setTag('tenant_id', context.tenantId!)
+    if (context.correlationId) scope.setTag('correlation_id', context.correlationId!)
+    if (context.jobId) scope.setTag('job_id', context.jobId!)
 
     scope.setExtras(context)
     sentry!.captureException(err)
@@ -88,14 +87,14 @@ export async function captureError(
 }
 
 export async function captureQueueFailure(
-  jobId:     string | undefined,
+  jobId: string | undefined,
   queueName: string,
-  err:       Error,
-  jobData:   unknown
+  err: Error,
+  jobData: unknown
 ): Promise<void> {
   await captureError(err, {
-    jobId,
-    queue:   queueName,
+    ...(jobId ? { jobId } : {}),
+    queue: queueName,
     jobData: JSON.stringify(jobData).slice(0, 500),
   })
 }
@@ -114,17 +113,20 @@ export async function captureCircuitOpen(serviceName: string): Promise<void> {
 export async function sentryErrorHandler(): Promise<any> {
   const sentry = await loadSentry()
   if (!sentry) {
-    return (_err: Error, _req: unknown, _res: unknown, next: Function) => next(_err)
+    return (err: unknown, _req: unknown, _res: unknown, next: (arg?: unknown) => void) => next(err)
   }
   return sentry.expressErrorHandler()
 }
 
 // ── Request Handler ───────────────────────────────────────────────────────────
 // Wrap your Express app: app.use(await sentryRequestHandler())
-export async function sentryRequestHandler(): Promise<any> {
+export async function sentryRequestHandler(): Promise<RequestHandler> {
   const sentry = await loadSentry()
   if (!sentry) {
-    return (_req: unknown, _res: unknown, next: Function) => next()
+    return (_req, _res, next) => next()
   }
-  return sentry.expressIntegration
+  return (req, _res, next) => {
+    sentry.setUser({ ip_address: req.ip || null })
+    next()
+  }
 }

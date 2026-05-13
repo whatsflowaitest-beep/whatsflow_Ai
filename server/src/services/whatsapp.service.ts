@@ -20,24 +20,24 @@ import { logger } from '../utils/logger.js'
 import { breakers, CircuitOpenError } from '../utils/circuit-breaker.js'
 
 const META_API_VERSION = process.env.META_API_VERSION ?? 'v19.0'
-const META_BASE_URL    = `https://graph.facebook.com/${META_API_VERSION}`
+const META_BASE_URL = `https://graph.facebook.com/${META_API_VERSION}`
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface TextMessage {
-  type:  'text'
-  body:  string
+  type: 'text'
+  body: string
 }
 
 export interface TemplateMessage {
-  type:         'template'
+  type: 'template'
   templateName: string
   languageCode: string
-  components?:  unknown[]
+  components?: unknown[]
 }
 
 export interface MediaMessage {
-  type:     'image' | 'document' | 'video' | 'audio'
+  type: 'image' | 'document' | 'video' | 'audio'
   mediaUrl: string
   caption?: string
   filename?: string
@@ -46,10 +46,10 @@ export interface MediaMessage {
 export type OutboundPayload = TextMessage | TemplateMessage | MediaMessage
 
 export interface SendResult {
-  success:      boolean
-  waMessageId?: string | undefined
-  error?:       string | undefined
-  statusCode?:  number | undefined
+  success: boolean
+  waMessageId?: string
+  error?: string
+  statusCode?: number
 }
 
 // ── Token resolution ──────────────────────────────────────────────────────────
@@ -61,8 +61,8 @@ const adminDb = createClient(
 
 interface WaAccount {
   phone_number_id: string
-  access_token:    string  // AES-256-GCM encrypted
-  waba_id:         string | null
+  access_token: string  // AES-256-GCM encrypted
+  waba_id: string | null
 }
 
 const accountCache = new Map<string, { account: WaAccount; cachedAt: number }>()
@@ -109,10 +109,10 @@ async function callMetaAPI(
       let response: Response
       try {
         response = await fetch(url, {
-          method:  'POST',
+          method: 'POST',
           headers: {
             'Authorization': `Bearer ${plainTextToken}`,
-            'Content-Type':  'application/json',
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({ messaging_product: 'whatsapp', ...body }),
           signal: AbortSignal.timeout(15_000),
@@ -158,8 +158,8 @@ export class WhatsAppService {
    */
   static async sendText(
     tenantId: string,
-    toPhone:  string,
-    text:     string
+    toPhone: string,
+    text: string
   ): Promise<SendResult> {
     const account = await getAccount(tenantId)
     if (!account) return { success: false, error: 'No active WhatsApp account for tenant' }
@@ -169,9 +169,9 @@ export class WhatsAppService {
 
     return callMetaAPI(account.phone_number_id, plainToken, {
       recipient_type: 'individual',
-      to:             toPhone,
-      type:           'text',
-      text:           { preview_url: false, body: text.slice(0, 4096) },
+      to: toPhone,
+      type: 'text',
+      text: { preview_url: false, body: text.slice(0, 4096) },
     })
   }
 
@@ -179,11 +179,11 @@ export class WhatsAppService {
    * Send a WhatsApp Approved Template message.
    */
   static async sendTemplate(
-    tenantId:     string,
-    toPhone:      string,
+    tenantId: string,
+    toPhone: string,
     templateName: string,
     languageCode: string,
-    components:   unknown[] = []
+    components: unknown[] = []
   ): Promise<SendResult> {
     const account = await getAccount(tenantId)
     if (!account) return { success: false, error: 'No active WhatsApp account' }
@@ -193,10 +193,10 @@ export class WhatsAppService {
 
     return callMetaAPI(account.phone_number_id, plainToken, {
       recipient_type: 'individual',
-      to:             toPhone,
-      type:           'template',
+      to: toPhone,
+      type: 'template',
       template: {
-        name:     templateName,
+        name: templateName,
         language: { code: languageCode },
         components,
       },
@@ -208,11 +208,11 @@ export class WhatsAppService {
    * mediaUrl must be a public HTTPS URL accessible by Meta.
    */
   static async sendMedia(
-    tenantId:  string,
-    toPhone:   string,
+    tenantId: string,
+    toPhone: string,
     mediaType: 'image' | 'document' | 'video' | 'audio',
-    mediaUrl:  string,
-    caption?:  string,
+    mediaUrl: string,
+    caption?: string,
     filename?: string
   ): Promise<SendResult> {
     const account = await getAccount(tenantId)
@@ -227,9 +227,9 @@ export class WhatsAppService {
 
     return callMetaAPI(account.phone_number_id, plainToken, {
       recipient_type: 'individual',
-      to:             toPhone,
-      type:           mediaType,
-      [mediaType]:    mediaObj,
+      to: toPhone,
+      type: mediaType,
+      [mediaType]: mediaObj,
     })
   }
 
@@ -237,7 +237,7 @@ export class WhatsAppService {
    * Mark a received message as read (improves user experience — shows blue ticks).
    */
   static async markAsRead(
-    tenantId:    string,
+    tenantId: string,
     waMessageId: string
   ): Promise<void> {
     const account = await getAccount(tenantId)
@@ -247,7 +247,7 @@ export class WhatsAppService {
     if (!plainToken) return
 
     await callMetaAPI(account.phone_number_id, plainToken, {
-      status:     'read',
+      status: 'read',
       message_id: waMessageId,
     })
   }

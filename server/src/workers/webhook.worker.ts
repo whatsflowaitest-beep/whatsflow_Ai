@@ -256,7 +256,7 @@ async function runAutoPipelineStageLogic(
         console.error('[worker] Failed to auto-update lead stage:', updateErr.message)
       } else {
         console.log(`[worker] Lead ${lead.id} stage automatically updated by AI to "${newStage}"`)
-        
+
         try {
           emitToTenant(tenantId, 'lead_updated', { id: lead.id, stage: newStage })
         } catch (realtimeErr) {
@@ -388,11 +388,11 @@ async function processWebhookJob(job: Job<WebhookJobData>): Promise<void> {
       const safeReply = sanitizeMessage(reply).slice(0, 1024)
 
       const aiMsg = await msgRepo.insert({
-        tenant_id:       tenantId,
+        tenant_id: tenantId,
         conversation_id: conversation.id,
-        sender_type:     'ai',
-        content:         safeReply,
-        message_type:    'text',
+        sender_type: 'ai',
+        content: safeReply,
+        message_type: 'text',
       })
 
       await convRepo.touchLastMessage(conversation.id)
@@ -401,12 +401,12 @@ async function processWebhookJob(job: Job<WebhookJobData>): Promise<void> {
       const { enqueueOutbound } = await import('../services/queue.enterprise.js')
       await enqueueOutbound({
         tenantId,
-        conversationId:  conversation.id,
-        phoneNumber:     safePhone,
-        content:         safeReply,
-        messageType:     'text',
-        idempotencyKey:  `ai-reply-${messageId}`,  // Idempotent: same inbound message → same outbound key
-        waAccountId:     tenantId,
+        conversationId: conversation.id,
+        phoneNumber: safePhone,
+        content: safeReply,
+        messageType: 'text',
+        idempotencyKey: `ai-reply-${messageId}`,  // Idempotent: same inbound message → same outbound key
+        waAccountId: tenantId,
       })
 
       // Broadcast to all clients subscribed to this conversation
@@ -426,7 +426,7 @@ async function processWebhookJob(job: Job<WebhookJobData>): Promise<void> {
     await markWebhookProcessed(messageId)
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err)
-    logger.error(`[worker] Job ${job.id} processing error:`, { err: errMsg })
+    logger.error(`[worker] Job ${job.id} processing error:`, errMsg)
     await markWebhookFailed(messageId, errMsg)
     throw err // Re-throw so BullMQ retries
   }

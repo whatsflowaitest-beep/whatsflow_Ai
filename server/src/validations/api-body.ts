@@ -50,10 +50,11 @@ export const saveFlowBodySchema = z.object({
 })
 
 export const createTicketBodySchema = z.object({
-  title: z.string().min(1).max(200).trim(),
+  conversation_id: uuid.optional(),
+  subject: z.string().min(1).max(200).trim().optional(),
   description: z.string().max(5000).optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
-  category: z.string().max(100).optional(),
+  reason: z.string().max(5000).optional(),
 })
 
 export const updateSettingsBodySchema = z.record(z.string(), z.unknown())
@@ -85,9 +86,11 @@ export const updateCatalogProductBodySchema = createCatalogProductBodySchema.par
 
 export const createAIAgentBodySchema = z.object({
   name: z.string().min(1).max(100).trim(),
-  role: z.string().min(1).max(200).trim(),
+  role: z.string().min(1).max(200).trim().optional(),
   instructions: z.string().min(1).max(8000).trim(),
-  tone: z.enum(['professional', 'friendly', 'formal', 'casual', 'empathetic']),
+  tone: z.enum(['professional', 'friendly', 'formal', 'casual', 'empathetic']).optional(),
+  model: z.string().max(200).optional(),
+  temperature: z.union([z.string(), z.number()]).optional(),
 })
 
 export const updateAIAgentBodySchema = createAIAgentBodySchema.partial()
@@ -107,7 +110,7 @@ export const chatWithAIAgentBodySchema = z.object({
 })
 
 export const toggleAIAgentStatusBodySchema = z.object({
-  status: z.enum(['active', 'inactive', 'paused']),
+  status: z.enum(['active', 'paused']),
 })
 
 export const idParamSchema = z.object({

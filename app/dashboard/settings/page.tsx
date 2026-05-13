@@ -80,27 +80,6 @@ function IntegrationCard({
 
 const invoices: Array<{ date: string, amount: string, status: string }> = [];
 
-interface SubscriptionPlan {
-  name: string;
-  price_monthly: string | number;
-}
-
-interface ActiveSubscription {
-  plan?: SubscriptionPlan | null;
-  status?: string;
-}
-
-interface Config {
-  business_name: string;
-  industry: string;
-  whatsapp_number: string;
-  support_email: string;
-  full_name: string;
-  personal_email: string;
-  active_subscription: ActiveSubscription | null;
-  [key: string]: any;
-}
-
 export default function SettingsPage() {
   return (
     <Suspense
@@ -138,7 +117,7 @@ function SettingsPageContent() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
 
-  const [config, setConfig] = useState<Config>({
+  const [config, setConfig] = useState<any>({
     business_name: "",
     industry: "dental",
     whatsapp_number: "",
@@ -161,6 +140,11 @@ function SettingsPageContent() {
         if (data) {
           setConfig(prev => ({ ...prev, ...data }));
         }
+        const tfaStatusRes = await fetch('/api/2fa/status');
+        if (tfaStatusRes.ok) {
+          const tfaStatus = await tfaStatusRes.json();
+          setTfaEnabled(Boolean(tfaStatus?.enabled));
+        }
       } catch (err) {
         console.error("Failed to load settings:", err);
       } finally {
@@ -170,7 +154,7 @@ function SettingsPageContent() {
     loadSettings();
   }, []);
 
-  const handleUpdate = (key: keyof Config, value: any) => {
+  const handleUpdate = (key: string, value: any) => {
     setConfig(prev => ({ ...prev, [key]: value }));
   };
 
@@ -231,11 +215,22 @@ function SettingsPageContent() {
   };
 
   const handleDisableTfa = () => {
-    setTfaEnabled(false);
-    toast("Two-factor authentication successfully deactivated", "success");
+    void (async () => {
+      try {
+        const res = await fetch("/api/2fa/disable", { method: "POST" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.success !== true) {
+          throw new Error(data.error || "Failed to disable 2FA");
+        }
+        setTfaEnabled(false);
+        toast("Two-factor authentication successfully deactivated", "success");
+      } catch (err: any) {
+        toast(err.message || "Failed to disable 2FA", "error");
+      }
+    })();
   };
 
-  const handleUpdatePassword = () => {
+  const handleUpdatePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast("Please fill in all password fields", "error");
       return;
@@ -244,15 +239,31 @@ function SettingsPageContent() {
       toast("New password and confirm password do not match", "error");
       return;
     }
+    if (newPassword.length < 8) {
+      toast("New password must be at least 8 characters", "error");
+      return;
+    }
     setSavingPassword(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/auth/update-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.success !== true) {
+        throw new Error(data.error || "Failed to update password");
+      }
       setPasswordOpen(false);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setSavingPassword(false);
       toast("Password successfully updated ✓", "success");
-    }, 800);
+    } catch (err: any) {
+      toast(err.message || "Failed to update password", "error");
+    } finally {
+      setSavingPassword(false);
+    }
   };
 
   if (loading) {
@@ -430,8 +441,8 @@ function SettingsPageContent() {
                     </div>
                   </div>
                   {tfaEnabled ? (
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={handleDisableTfa}
                       className="h-9 rounded-xl text-xs font-bold border-red-200 hover:bg-red-50 dark:hover:bg-red-950 text-red-500 transition-all"
                     >
@@ -439,8 +450,8 @@ function SettingsPageContent() {
                     </Button>
                   ) : (
                     <Dialog open={tfaOpen} onOpenChange={setTfaOpen}>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={handleOpenTfa}
                         className="h-9 rounded-xl text-xs font-bold border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937] text-[#111827] dark:text-[#F9FAFB] hover:bg-[#F3F4F6] dark:hover:bg-[#374151]"
                       >
@@ -481,8 +492,8 @@ function SettingsPageContent() {
                         </div>
                         <div className="mt-6 flex justify-end gap-3">
                           <Button variant="outline" onClick={() => setTfaOpen(false)} className="h-11 px-5 rounded-xl text-xs font-bold">Cancel</Button>
-                          <Button 
-                            onClick={handleEnableTfa} 
+                          <Button
+                            onClick={handleEnableTfa}
                             disabled={confirmingTfa}
                             className="bg-[#22C55E] hover:bg-[#16A34A] text-white px-5 h-11 rounded-xl font-bold transition-all shadow-md active:scale-95"
                           >
@@ -504,8 +515,8 @@ function SettingsPageContent() {
                     </div>
                   </div>
                   <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => setPasswordOpen(true)}
                       className="h-9 rounded-xl text-xs font-bold border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937] text-[#111827] dark:text-[#F9FAFB] hover:bg-[#F3F4F6] dark:hover:bg-[#374151]"
                     >
@@ -552,8 +563,8 @@ function SettingsPageContent() {
                       </div>
                       <div className="mt-6 flex justify-end gap-3">
                         <Button variant="outline" onClick={() => setPasswordOpen(false)} className="h-11 px-5 rounded-xl text-xs font-bold">Cancel</Button>
-                        <Button 
-                          onClick={handleUpdatePassword} 
+                        <Button
+                          onClick={handleUpdatePassword}
                           disabled={savingPassword}
                           className="bg-[#22C55E] hover:bg-[#16A34A] text-white px-5 h-11 rounded-xl font-bold transition-all shadow-md active:scale-95"
                         >

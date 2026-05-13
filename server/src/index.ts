@@ -24,7 +24,7 @@ export const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const app  = express()
+const app = express()
 const PORT = parseInt(process.env.PORT ?? '5000', 10)
 
 // ── Sentry: init FIRST so it captures all errors including startup ────────────
@@ -36,8 +36,8 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'none'"],
-        scriptSrc:  ["'none'"],
-        objectSrc:  ["'none'"],
+        scriptSrc: ["'none'"],
+        objectSrc: ["'none'"],
       },
     },
     hsts: { maxAge: 31536000, includeSubDomains: true },
@@ -54,8 +54,8 @@ app.use(
       if (allowedOrigins.includes(origin)) return cb(null, true)
       cb(new Error(`CORS: origin ${origin} not in allowlist`))
     },
-    credentials:    true,
-    methods:        ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Correlation-Id'],
   })
 )
@@ -80,10 +80,10 @@ app.use(latencyMiddleware)
 app.use((req, res, next) => {
   const t0 = Date.now()
   res.on('finish', () => {
-    const route  = req.route?.path ?? req.path
+    const route = req.route?.path ?? req.path
     const method = req.method
     const status = String(res.statusCode)
-    const ms     = Date.now() - t0
+    const ms = Date.now() - t0
 
     metrics.inc(METRICS.HTTP_REQUESTS_TOTAL, { method, route, status })
     metrics.observe(METRICS.HTTP_REQUEST_DURATION, ms, { method, route })
@@ -98,10 +98,10 @@ app.use('/api', apiRoutes)
 // ── Health Check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
   res.json({
-    status:    'ok',
-    ts:        new Date().toISOString(),
-    version:   process.env.npm_package_version,
-    env:       process.env.NODE_ENV,
+    status: 'ok',
+    ts: new Date().toISOString(),
+    version: process.env.npm_package_version,
+    env: process.env.NODE_ENV,
   })
 })
 
@@ -125,9 +125,9 @@ app.get('/metrics', async (_req, res) => {
     ])
 
     res.json({
-      queues:          queueStats,
+      queues: queueStats,
       circuitBreakers: cbStats,
-      ts:              new Date().toISOString(),
+      ts: new Date().toISOString(),
     })
   } catch {
     res.status(503).json({ error: 'Metrics unavailable' })
@@ -140,7 +140,7 @@ app.use((_req, res) => {
 })
 
 // ── Error Handler (Sentry then generic) ──────────────────────────────────────
-app.use((await sentryErrorHandler()) as any)
+app.use(await sentryErrorHandler())
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   logger.error('Unhandled error', { err: err.message })
@@ -154,27 +154,27 @@ export let io: Awaited<ReturnType<typeof createRealtimeServer>>
 
 export { getQueue } from './services/queue.enterprise.js'
 
-// ── Boot Sequence ──────────────────────────────────────────────────────────────
-;(async () => {
-  // 1. Pre-flight: env, schema, Redis connectivity
-  await validateStartup()
+  // ── Boot Sequence ──────────────────────────────────────────────────────────────
+  ; (async () => {
+    // 1. Pre-flight: env, schema, Redis connectivity
+    await validateStartup()
 
-  // 2. Start WebSocket + Redis adapter
-  io = await createRealtimeServer(httpServer)
+    // 2. Start WebSocket + Redis adapter
+    io = await createRealtimeServer(httpServer)
 
-  // 3. Start Prometheus metrics collection loop
-  startQueueMetricsCollection()
+    // 3. Start Prometheus metrics collection loop
+    startQueueMetricsCollection()
 
-  // 4. Bind HTTP
-  httpServer.listen(PORT, () => {
-    logger.info('WhatsFlow AI API ready', {
-      port:    PORT,
-      env:     process.env.NODE_ENV ?? 'development',
-      sentry:  !!process.env.SENTRY_DSN,
-      metrics: `http://localhost:${PORT}/metrics`,
+    // 4. Bind HTTP
+    httpServer.listen(PORT, () => {
+      logger.info('WhatsFlow AI API ready', {
+        port: PORT,
+        env: process.env.NODE_ENV ?? 'development',
+        sentry: !!process.env.SENTRY_DSN,
+        metrics: `http://localhost:${PORT}/metrics`,
+      })
     })
-  })
-})()
+  })()
 
 // ── Graceful Shutdown ─────────────────────────────────────────────────────────
 async function shutdown(signal: string): Promise<void> {
@@ -196,6 +196,6 @@ async function shutdown(signal: string): Promise<void> {
 }
 
 process.on('SIGTERM', () => shutdown('SIGTERM'))
-process.on('SIGINT',  () => shutdown('SIGINT'))
+process.on('SIGINT', () => shutdown('SIGINT'))
 
 export { httpServer }

@@ -21,9 +21,9 @@ import { logger } from '../utils/logger.js'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface SocketData {
-  userId:   string
+  userId: string
   tenantId: string
-  email:    string
+  email: string
 }
 
 // ── Rate Limiter (per socket, in-memory) ──────────────────────────────────────
@@ -60,8 +60,8 @@ export async function createRealtimeServer(httpServer: HttpServer): Promise<Sock
 
   await Promise.all([pubClient.connect(), subClient.connect()])
 
-  pubClient.on('error', (e: any) => logger.error('[realtime:redis-pub] Error', { err: e.message }))
-  subClient.on('error', (e: any) => logger.error('[realtime:redis-sub] Error', { err: e.message }))
+  pubClient.on('error', (e) => logger.error('[realtime:redis-pub] Error', { err: e.message }))
+  subClient.on('error', (e) => logger.error('[realtime:redis-sub] Error', { err: e.message }))
 
   const supabase = createSupabaseClient(
     process.env.SUPABASE_URL!,
@@ -72,7 +72,7 @@ export async function createRealtimeServer(httpServer: HttpServer): Promise<Sock
     cors: { origin: allowedOrigins, credentials: true },
     transports: ['websocket', 'polling'],
     // Ping timeout — detect dead connections quickly
-    pingTimeout:  10_000,
+    pingTimeout: 10_000,
     pingInterval: 25_000,
     // Connection state recovery: resend missed events on reconnect (up to 2 min)
     connectionStateRecovery: {
@@ -126,9 +126,9 @@ export async function createRealtimeServer(httpServer: HttpServer): Promise<Sock
       }
 
       const sockData = socket.data as SocketData
-      sockData.userId   = user.id
+      sockData.userId = user.id
       sockData.tenantId = tenantId
-      sockData.email    = user.email ?? ''
+      sockData.email = user.email ?? ''
 
       next()
     } catch (err) {
@@ -221,7 +221,7 @@ export function broadcastNewMessage(
 // ── Security Helper ───────────────────────────────────────────────────────────
 
 async function verifyConversationAccess(
-  supabase: any,
+  supabase: ReturnType<typeof createSupabaseClient>,
   tenantId: string,
   conversationId: string
 ): Promise<boolean> {

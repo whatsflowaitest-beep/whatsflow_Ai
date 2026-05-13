@@ -38,11 +38,9 @@ next-env.d.ts
 .env.local
 server/.env
 server/node_modules/
-
-# compiled files in server
+server/dist/
 server/src/**/*.js
-server/src/**/*.d.ts
 server/src/**/*.js.map
+server/src/**/*.d.ts
+server/src/**/*.d.ts.map
 
-# temp proxy for deployment
-app/api/webhooks/shell-runner/

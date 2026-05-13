@@ -314,19 +314,46 @@ export class APIController {
   static async createTicket(req: Request, res: Response) {
     try {
       const ticket = req.body as {
-        conversation_id: string
+        conversation_id?: string
+        subject?: string
+        description?: string
+        priority?: string
         reason?: string
       }
       const db = APIController.tenantDb(req)
       const tenantId = APIController.tenantId(req)
+      let conversationId = ticket.conversation_id
+
+      if (!conversationId) {
+        const { data: latestConversation } = await db
+          .from('conversations')
+          .select('id')
+          .eq('tenant_id', tenantId)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        conversationId = latestConversation?.id
+      }
+
+      if (!conversationId) {
+        return res.status(422).json({ error: 'No conversation available to attach ticket' })
+      }
+
+      const normalizedReason =
+        (ticket.reason ??
+        [ticket.subject, ticket.description, ticket.priority ? `Priority: ${ticket.priority}` : null]
+          .filter(Boolean)
+          .join(' | ')
+          .slice(0, 5000)) || null
+
       // FIXED: use handoff_requests (no tickets table in production schema)
       const { data, error } = await db
         .from('handoff_requests')
         .insert([
           {
             tenant_id: tenantId,
-            conversation_id: ticket.conversation_id,
-            reason: ticket.reason ?? null,
+            conversation_id: conversationId,
+            reason: normalizedReason,
             status: 'pending',
           },
         ])
@@ -637,7 +664,13 @@ export class APIController {
       const db = APIController.tenantDb(req)
       const { data, error } = await db.from('ai_agents').select('*').order('created_at', { ascending: false })
       if (error) throw error
-      res.json(data)
+      const mapped = (data ?? []).map((agent) => ({
+        ...agent,
+        role: agent.role ?? 'Assistant',
+        tone: agent.tone ?? 'professional',
+        status: agent.is_active ? 'active' : 'paused',
+      }))
+      res.json(mapped)
     } catch (error) {
       sendSafeError(res, error)
     }
@@ -645,7 +678,7 @@ export class APIController {
 
   static async createAIAgent(req: Request, res: Response) {
     try {
-      const { name, instructions, model, temperature } = req.body as Record<string, string>
+      const { name, role, tone, instructions, model, temperature } = req.body as Record<string, string>
       const db = APIController.tenantDb(req)
       const tenantId = APIController.tenantId(req)
       const { data, error } = await db
@@ -654,7 +687,7 @@ export class APIController {
           {
             name,
             instructions: instructions ?? 'You are a helpful assistant.',
-            is_active: true,                             // ← FIXED: was status: 'active'
+            is_active: true,
             tenant_id: tenantId,
             model: model || 'gemini-1.5-flash',
             temperature: parseFloat(temperature ?? '0.7'),
@@ -662,7 +695,13 @@ export class APIController {
         ])
         .select()
       if (error) throw error
-      res.status(201).json(data![0])
+      const created = data![0]
+      res.status(201).json({
+        ...created,
+        role: role ?? 'Assistant',
+        tone: tone ?? 'professional',
+        status: created.is_active ? 'active' : 'paused',
+      })
     } catch (error) {
       sendSafeError(res, error)
     }
@@ -671,18 +710,23 @@ export class APIController {
   static async updateAIAgent(req: Request, res: Response) {
     try {
       const { id } = req.params
-      const { name, instructions, model, temperature } = req.body as Record<string, string>
+      const { name, role, tone, instructions, model, temperature } = req.body as Record<string, string>
       const db = APIController.tenantDb(req)
       const tenantId = APIController.tenantId(req)
       const { data, error } = await db
         .from('ai_agents')
-        // FIXED: removed role/tone (not in schema), removed updated_at (no such column in ai_agents)
         .update({ name, instructions, model, temperature: parseFloat(temperature ?? '0.7') })
         .eq('id', id)
         .eq('tenant_id', tenantId)
         .select()
       if (error) throw error
-      res.json(data![0])
+      const updated = data![0]
+      res.json({
+        ...updated,
+        role: role ?? updated.role ?? 'Assistant',
+        tone: tone ?? updated.tone ?? 'professional',
+        status: updated.is_active ? 'active' : 'paused',
+      })
     } catch (error) {
       sendSafeError(res, error)
     }
@@ -704,18 +748,22 @@ export class APIController {
   static async toggleAIAgentStatus(req: Request, res: Response) {
     try {
       const { id } = req.params
-      // FIXED: is_active boolean (not a status string)
-      const { is_active } = req.body as { is_active: boolean }
+      const { status } = req.body as { status: 'active' | 'paused' }
+      const is_active = status === 'active'
       const db = APIController.tenantDb(req)
       const tenantId = APIController.tenantId(req)
       const { data, error } = await db
         .from('ai_agents')
-        .update({ is_active })           // ← FIXED: was { status }
+        .update({ is_active })
         .eq('id', id)
         .eq('tenant_id', tenantId)
         .select()
       if (error) throw error
-      res.json(data![0])
+      const updated = data![0]
+      res.json({
+        ...updated,
+        status: updated.is_active ? 'active' : 'paused',
+      })
     } catch (error) {
       sendSafeError(res, error)
     }
