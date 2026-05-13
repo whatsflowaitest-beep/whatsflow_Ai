@@ -6,6 +6,7 @@ import {
   Plus, Bot, Edit3, Trash2, Send, Wand2, RefreshCw, Pause, Play,
   Loader2, AlertCircle, Brain, BookOpen, X, PlusCircle, Cpu,
   ChevronDown, ChevronUp, Globe, FileText, MessageSquare, Building2,
+  Database,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,7 @@ import { apiFetch } from "@/lib/api-config";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-type KbSourceType = "business_context" | "faq" | "website_url" | "plain_text";
+type KbSourceType = "business_context" | "faq" | "website_url" | "plain_text" | "existing_asset";
 
 interface FaqEntry {
   id: string;
@@ -39,6 +40,7 @@ interface KbSource {
   // plain_text
   text?: string;
   label?: string;
+  assetId?: string;
 }
 
 interface Agent {
@@ -69,25 +71,43 @@ const TONE_OPTIONS = [
 ];
 
 const MODEL_OPTIONS = [
+  // Google
+  { value: "gemini-1-5-flash",   label: "Gemini 1.5 Flash",  badge: "Recommended / Fast", provider: "Google", logo: "https://img.icons8.com/ios-glyphs/30/bard.png" },
+  { value: "gemini-1-5-pro",     label: "Gemini 1.5 Pro",    badge: "Large Context", provider: "Google", logo: "https://img.icons8.com/ios-glyphs/30/bard.png" },
+
+  // Groq
+  { value: "llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq)", badge: "Ultra-Fast / Elite", provider: "Groq", logo: "https://img.icons8.com/ios-filled/50/lightning-bolt.png" },
+  { value: "llama-3.1-8b-instant",   label: "Llama 3.1 8B (Groq)",   badge: "Pure Speed",        provider: "Groq", logo: "https://img.icons8.com/ios-filled/50/lightning-bolt.png" },
+
   // OpenAI
-  { value: "gpt-4o",             label: "GPT-4o",            badge: "Recommended", provider: "OpenAI", emoji: "⚡" },
-  { value: "gpt-4o-mini",        label: "GPT-4o Mini",       badge: "Fast",        provider: "OpenAI", emoji: "💨" },
-  { value: "o1-preview",         label: "OpenAI o1 Preview", badge: "Smart",       provider: "OpenAI", emoji: "🧠" },
-  { value: "o1-mini",            label: "OpenAI o1 Mini",    badge: "Reasoning",   provider: "OpenAI", emoji: "🧩" },
-  { value: "gpt-4-turbo",        label: "GPT-4 Turbo",       badge: "Complex",     provider: "OpenAI", emoji: "🤖" },
+  { value: "gpt-4o",             label: "GPT-4o",            badge: "Smart",       provider: "OpenAI", logo: "https://img.icons8.com/ios-glyphs/30/chatgpt.png" },
+  { value: "gpt-4o-mini",        label: "GPT-4o Mini",       badge: "Fast",        provider: "OpenAI", logo: "https://img.icons8.com/ios-glyphs/30/chatgpt.png" },
+  { value: "o1-preview",         label: "OpenAI o1 Preview", badge: "Reasoning",   provider: "OpenAI", logo: "https://img.icons8.com/ios-glyphs/30/chatgpt.png" },
+  { value: "o1-mini",            label: "OpenAI o1 Mini",    badge: "Compact",     provider: "OpenAI", logo: "https://img.icons8.com/ios-glyphs/30/chatgpt.png" },
+  { value: "gpt-4-turbo",        label: "GPT-4 Turbo",       badge: "Complex",     provider: "OpenAI", logo: "https://img.icons8.com/ios-glyphs/30/chatgpt.png" },
   
   // Anthropic
-  { value: "claude-3-5-sonnet",  label: "Claude 3.5 Sonnet", badge: "Smart",       provider: "Anthropic", emoji: "🎭" },
-  { value: "claude-3-5-haiku",   label: "Claude 3.5 Haiku",  badge: "Economy",     provider: "Anthropic", emoji: "⚡" },
-  { value: "claude-3-opus",      label: "Claude 3 Opus",     badge: "Power",       provider: "Anthropic", emoji: "🪐" },
-
-  // Google
-  { value: "gemini-1-5-pro",     label: "Gemini 1.5 Pro",    badge: "Large Context", provider: "Google", emoji: "💎" },
-  { value: "gemini-1-5-flash",   label: "Gemini 1.5 Flash",  badge: "Fastest",     provider: "Google", emoji: "✨" },
+  { value: "claude-3-5-sonnet",  label: "Claude 3.5 Sonnet", badge: "Intelligent", provider: "Anthropic", logo: "https://img.icons8.com/ios-glyphs/30/claude-ai.png" },
+  { value: "claude-3-5-haiku",   label: "Claude 3.5 Haiku",  badge: "Economy",     provider: "Anthropic", logo: "https://img.icons8.com/ios-glyphs/30/claude-ai.png" },
+  { value: "claude-3-opus",      label: "Claude 3 Opus",     badge: "Power",       provider: "Anthropic", logo: "https://img.icons8.com/ios-glyphs/30/claude-ai.png" },
 
   // Meta
-  { value: "llama-3-1-70b",      label: "Llama 3.1 70B",     badge: "Open Source", provider: "Meta",   emoji: "🦙" },
-  { value: "llama-3-1-8b",       label: "Llama 3.1 8B",      badge: "Lightweight", provider: "Meta",   emoji: "🐑" },
+  { value: "llama-3-1-70b",      label: "Llama 3.1 70B",     badge: "Open Source", provider: "Meta",   logo: "https://img.icons8.com/ios-filled/50/meta.png" },
+  { value: "llama-3-1-8b",       label: "Llama 3.1 8B",      badge: "Lightweight", provider: "Meta",   logo: "https://img.icons8.com/ios-filled/50/meta.png" },
+
+  // Perplexity
+  { value: "sonar-small-online", label: "Sonar Small",       badge: "Online / Search", provider: "Perplexity", logo: "https://img.icons8.com/ios-filled/50/perplexity-ai.png" },
+  { value: "sonar-medium-online",label: "Sonar Medium",      badge: "Fast / Smart",  provider: "Perplexity", logo: "https://img.icons8.com/ios-filled/50/perplexity-ai.png" },
+
+  // DeepSeek
+  { value: "deepseek-chat",      label: "DeepSeek Chat",     badge: "Efficiency",    provider: "DeepSeek", logo: "https://img.icons8.com/ios-filled/50/deepseek.png" },
+  { value: "deepseek-coder",     label: "DeepSeek Coder",    badge: "Logic",         provider: "DeepSeek", logo: "https://img.icons8.com/ios-filled/50/deepseek.png" },
+
+  // Grok
+  { value: "grok-2",             label: "Grok 2",            badge: "Real-time",   provider: "Grok", logo: "https://img.icons8.com/ios-filled/50/grok.png" },
+
+  // Jasper AI
+  { value: "jasper-ai",          label: "Jasper AI",         badge: "Marketing",   provider: "Jasper AI", logo: "https://img.icons8.com/ios-filled/50/jasper-ai.png" },
 ];
 
 const PIPELINE_OPTIONS = [
@@ -103,6 +123,7 @@ const KB_SOURCE_TYPES: { type: KbSourceType; label: string; desc: string; icon: 
   { type: "faq",              label: "FAQ / Q&A",         desc: "Common questions and answers",          icon: MessageSquare },
   { type: "website_url",      label: "Website URL",       desc: "Scrape content from a webpage",        icon: Globe },
   { type: "plain_text",       label: "Plain Text",        desc: "Add any text as a knowledge chunk",    icon: FileText },
+  { type: "existing_asset",   label: "Linked Asset",      desc: "Stored knowledge reference",            icon: Database },
 ];
 
 const selectItemClass =
@@ -126,13 +147,13 @@ export default function AIAgentsPage() {
   const [role, setRole] = useState("");
   const [instructions, setInstructions] = useState("");
   const [tone, setTone] = useState("Professional");
-  const [model, setModel] = useState("gpt-4o");
+  const [model, setModel] = useState("gemini-1-5-flash");
   const [pipeline, setPipeline] = useState("Default Pipeline");
 
   // KB state
   const [kbOpen, setKbOpen] = useState(false);
   const [kbSources, setKbSources] = useState<KbSource[]>([]);
-  const [addKbType, setAddKbType] = useState<KbSourceType | "">("");
+  const [addKbType, setAddKbType] = useState("");
 
   // Sandbox state
   const [sandboxAgentId, setSandboxAgentId] = useState<string>("");
@@ -150,7 +171,7 @@ export default function AIAgentsPage() {
       const localExtras = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("ai_agents_extras") || "{}") : {};
       const merged = data.map((a: Agent) => ({
         ...a,
-        model: localExtras[a.id]?.model ?? a.model ?? "gpt-4o",
+        model: localExtras[a.id]?.model ?? a.model ?? "gemini-1-5-flash",
         pipeline: localExtras[a.id]?.pipeline ?? a.pipeline ?? "Default Pipeline",
         kbSources: localExtras[a.id]?.kbSources ?? a.kbSources ?? []
       }));
@@ -167,15 +188,44 @@ export default function AIAgentsPage() {
     }
   }
 
+  const [globalKbItems, setGlobalKbItems] = useState<any[]>([]);
+
   useEffect(() => { loadAgents(); }, []);
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory, isTyping]);
+
+  useEffect(() => {
+    async function loadGlobalKb() {
+      try {
+        const data = await apiFetch("/api/knowledge");
+        if (data && Array.isArray(data)) {
+          setGlobalKbItems(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch knowledge sources:", err);
+      }
+    }
+    loadGlobalKb();
+  }, []);
 
   // ── KB helpers ────────────────────────────────────────────────────────────
 
   function addKbSource() {
     if (!addKbType) return;
-    const base: KbSource = { id: crypto.randomUUID(), type: addKbType, expanded: true };
-    if (addKbType === "faq") base.faqs = [];
+    let base: KbSource;
+    if (addKbType.startsWith("asset:")) {
+      const assetId = addKbType.split(":")[1];
+      const asset = globalKbItems.find(a => a.id === assetId);
+      base = { 
+        id: crypto.randomUUID(), 
+        type: "existing_asset", 
+        expanded: false, 
+        label: asset?.title || "Linked Knowledge Asset",
+        assetId 
+      };
+    } else {
+      base = { id: crypto.randomUUID(), type: addKbType as KbSourceType, expanded: true };
+      if (addKbType === "faq") base.faqs = [];
+    }
     setKbSources(prev => [...prev, base]);
     setAddKbType("");
   }
@@ -218,7 +268,7 @@ export default function AIAgentsPage() {
   function resetForm() {
     setEditingAgent(null);
     setName(""); setRole(""); setInstructions(""); setTone("Professional");
-    setModel("gpt-4o"); setPipeline("Default Pipeline"); setKbSources([]); setKbOpen(false); setAddKbType("");
+    setModel("gemini-1-5-flash"); setPipeline("Default Pipeline"); setKbSources([]); setKbOpen(false); setAddKbType("");
   }
 
   async function handleSaveAgent() {
@@ -270,7 +320,7 @@ export default function AIAgentsPage() {
     setEditingAgent(agent);
     setName(agent.name); setRole(agent.role);
     setInstructions(agent.instructions); setTone(agent.tone);
-    setModel(agent.model ?? "gpt-4o");
+    setModel(agent.model ?? "gemini-1-5-flash");
     setPipeline(agent.pipeline ?? "Default Pipeline");
     setKbSources(agent.kbSources ?? []);
     setKbOpen((agent.kbSources ?? []).length > 0);
@@ -426,8 +476,8 @@ export default function AIAgentsPage() {
                       <Select value={model} onValueChange={setModel}>
                         <SelectTrigger className={selectTriggerClass}>
                           <div className="flex items-center gap-2 overflow-hidden">
-                            {selectedModel?.emoji ? (
-                              <span className="text-base shrink-0">{selectedModel.emoji}</span>
+                            {selectedModel?.logo ? (
+                              <img src={selectedModel.logo} alt="" className="w-4 h-4 shrink-0 object-contain rounded bg-white p-0.5" />
                             ) : (
                               <Cpu className="w-3.5 h-3.5 text-[#22C55E] shrink-0" />
                             )}
@@ -439,49 +489,53 @@ export default function AIAgentsPage() {
                             )}
                           </div>
                         </SelectTrigger>
-                        <SelectContent className={selectContentClass}>
+                        <SelectContent className={cn(selectContentClass, "max-h-[320px]")} side="bottom">
                           <div className="px-2 pt-2 pb-1">
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF]">Google (Default)</p>
+                          </div>
+                          {MODEL_OPTIONS.filter(m => m.provider === "Google").map(opt => (
+                            <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
+                              <div className="flex items-center justify-between w-full gap-6">
+                                <div className="flex items-center gap-2">
+                                  {opt.logo && <img src={opt.logo} alt="" className="w-4 h-4 shrink-0 object-contain rounded bg-white p-0.5" />}
+                                  <span>{opt.label}</span>
+                                </div>
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#F3F4F6] dark:bg-[#1F2937] text-[#6B7280] dark:text-[#9CA3AF]">{opt.badge}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+
+                          <div className="px-2 pt-3 pb-1">
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-[#22C55E]">🔥 Groq (Ultra Fast)</p>
+                          </div>
+                          {MODEL_OPTIONS.filter(m => m.provider === "Groq").map(opt => (
+                            <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
+                              <div className="flex items-center justify-between w-full gap-6">
+                                <div className="flex items-center gap-2">
+                                  {opt.logo && <img src={opt.logo} alt="" className="w-4 h-4 shrink-0 object-contain rounded bg-white p-0.5" />}
+                                  <span>{opt.label}</span>
+                                </div>
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#D1FAE5] dark:bg-[#064E3B] text-[#047857] dark:text-[#34D399]">{opt.badge}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+
+                          <div className="px-2 pt-3 pb-1">
                             <p className="text-[9px] font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF]">OpenAI</p>
                           </div>
                           {MODEL_OPTIONS.filter(m => m.provider === "OpenAI").map(opt => (
                             <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
                               <div className="flex items-center justify-between w-full gap-6">
                                 <div className="flex items-center gap-2">
-                                  {opt.emoji && <span className="text-base shrink-0">{opt.emoji}</span>}
+                                  {opt.logo && <img src={opt.logo} alt="" className="w-4 h-4 shrink-0 object-contain rounded bg-white p-0.5" />}
                                   <span>{opt.label}</span>
                                 </div>
                                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#F3F4F6] dark:bg-[#1F2937] text-[#6B7280] dark:text-[#9CA3AF]">{opt.badge}</span>
                               </div>
                             </SelectItem>
                           ))}
-                          <div className="px-2 pt-3 pb-1">
-                            <p className="text-[9px] font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF]">Anthropic</p>
-                          </div>
-                          {MODEL_OPTIONS.filter(m => m.provider === "Anthropic").map(opt => (
-                            <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
-                              <div className="flex items-center justify-between w-full gap-6">
-                                <div className="flex items-center gap-2">
-                                  {opt.emoji && <span className="text-base shrink-0">{opt.emoji}</span>}
-                                  <span>{opt.label}</span>
-                                </div>
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#F3F4F6] dark:bg-[#1F2937] text-[#6B7280] dark:text-[#9CA3AF]">{opt.badge}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                          <div className="px-2 pt-3 pb-1">
-                            <p className="text-[9px] font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF]">Google</p>
-                          </div>
-                          {MODEL_OPTIONS.filter(m => m.provider === "Google").map(opt => (
-                            <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
-                              <div className="flex items-center justify-between w-full gap-6">
-                                <div className="flex items-center gap-2">
-                                  {opt.emoji && <span className="text-base shrink-0">{opt.emoji}</span>}
-                                  <span>{opt.label}</span>
-                                </div>
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#F3F4F6] dark:bg-[#1F2937] text-[#6B7280] dark:text-[#9CA3AF]">{opt.badge}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
+
+
                           <div className="px-2 pt-3 pb-1">
                             <p className="text-[9px] font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF]">Meta</p>
                           </div>
@@ -489,7 +543,63 @@ export default function AIAgentsPage() {
                             <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
                               <div className="flex items-center justify-between w-full gap-6">
                                 <div className="flex items-center gap-2">
-                                  {opt.emoji && <span className="text-base shrink-0">{opt.emoji}</span>}
+                                  {opt.logo && <img src={opt.logo} alt="" className="w-4 h-4 shrink-0 object-contain rounded bg-white p-0.5" />}
+                                  <span>{opt.label}</span>
+                                </div>
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#F3F4F6] dark:bg-[#1F2937] text-[#6B7280] dark:text-[#9CA3AF]">{opt.badge}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                          <div className="px-2 pt-3 pb-1">
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF]">Perplexity</p>
+                          </div>
+                          {MODEL_OPTIONS.filter(m => m.provider === "Perplexity").map(opt => (
+                            <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
+                              <div className="flex items-center justify-between w-full gap-6">
+                                <div className="flex items-center gap-2">
+                                  {opt.logo && <img src={opt.logo} alt="" className="w-4 h-4 shrink-0 object-contain rounded bg-white p-0.5" />}
+                                  <span>{opt.label}</span>
+                                </div>
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#F3F4F6] dark:bg-[#1F2937] text-[#6B7280] dark:text-[#9CA3AF]">{opt.badge}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                          <div className="px-2 pt-3 pb-1">
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF]">DeepSeek</p>
+                          </div>
+                          {MODEL_OPTIONS.filter(m => m.provider === "DeepSeek").map(opt => (
+                            <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
+                              <div className="flex items-center justify-between w-full gap-6">
+                                <div className="flex items-center gap-2">
+                                  {opt.logo && <img src={opt.logo} alt="" className="w-4 h-4 shrink-0 object-contain rounded bg-white p-0.5" />}
+                                  <span>{opt.label}</span>
+                                </div>
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#F3F4F6] dark:bg-[#1F2937] text-[#6B7280] dark:text-[#9CA3AF]">{opt.badge}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                          <div className="px-2 pt-3 pb-1">
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF]">Grok</p>
+                          </div>
+                          {MODEL_OPTIONS.filter(m => m.provider === "Grok").map(opt => (
+                            <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
+                              <div className="flex items-center justify-between w-full gap-6">
+                                <div className="flex items-center gap-2">
+                                  {opt.logo && <img src={opt.logo} alt="" className="w-4 h-4 shrink-0 object-contain rounded bg-white p-0.5" />}
+                                  <span>{opt.label}</span>
+                                </div>
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#F3F4F6] dark:bg-[#1F2937] text-[#6B7280] dark:text-[#9CA3AF]">{opt.badge}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                          <div className="px-2 pt-3 pb-1">
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF]">Jasper AI</p>
+                          </div>
+                          {MODEL_OPTIONS.filter(m => m.provider === "Jasper AI").map(opt => (
+                            <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
+                              <div className="flex items-center justify-between w-full gap-6">
+                                <div className="flex items-center gap-2">
+                                  {opt.logo && <img src={opt.logo} alt="" className="w-4 h-4 shrink-0 object-contain rounded bg-white p-0.5" />}
                                   <span>{opt.label}</span>
                                 </div>
                                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#F3F4F6] dark:bg-[#1F2937] text-[#6B7280] dark:text-[#9CA3AF]">{opt.badge}</span>
@@ -501,25 +611,7 @@ export default function AIAgentsPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label className={labelClass}>Sales Pipeline</Label>
-                      <Select value={pipeline} onValueChange={setPipeline}>
-                        <SelectTrigger className={selectTriggerClass}>
-                          <div className="flex items-center gap-2 overflow-hidden">
-                            <span className="truncate text-sm">{PIPELINE_OPTIONS.find(p => p.value === pipeline)?.label ?? pipeline}</span>
-                          </div>
-                        </SelectTrigger>
-                        <SelectContent className={selectContentClass}>
-                          {PIPELINE_OPTIONS.map(opt => (
-                            <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+
 
                   <div className="space-y-1.5">
                     <Label className={labelClass}>Instructions (System Prompt)</Label>
@@ -636,6 +728,21 @@ export default function AIAgentsPage() {
                                               className={`${innerFieldClass} h-8 text-xs`}
                                             />
 
+                                            {/* Existing Asset Reference */}
+                                            {source.type === "existing_asset" && (
+                                              <div className="flex items-center gap-3 p-3 bg-[#22C55E]/5 border border-[#22C55E]/20 rounded-xl">
+                                                <Database className="w-5 h-5 text-[#22C55E] shrink-0" />
+                                                <div className="flex-1 min-w-0">
+                                                  <p className="text-xs font-bold text-[#111827] dark:text-[#F9FAFB] truncate">
+                                                    {globalKbItems.find(a => a.id === source.assetId)?.title || source.label || "Linked Asset"}
+                                                  </p>
+                                                  <p className="text-[10px] text-[#6B7280] dark:text-[#9CA3AF] font-medium">
+                                                    Asset ID: {source.assetId}
+                                                  </p>
+                                                </div>
+                                              </div>
+                                            )}
+
                                             {/* Business Context */}
                                             {source.type === "business_context" && (
                                               <Textarea
@@ -727,12 +834,15 @@ export default function AIAgentsPage() {
 
                           {/* Add new source row */}
                           <div className="flex gap-2">
-                            <Select value={addKbType} onValueChange={v => setAddKbType(v as KbSourceType)}>
+                            <Select value={addKbType} onValueChange={v => setAddKbType(v)}>
                               <SelectTrigger className="flex-1 h-9 bg-[#F9FAFB] dark:bg-[#0B0F1A] border-[#E5E7EB] dark:border-[#1F2937] text-[#111827] dark:text-[#F9FAFB] rounded-xl text-xs">
-                                <SelectValue placeholder="Select knowledge source type…" />
+                                <SelectValue placeholder="Add source or select existing asset…" />
                               </SelectTrigger>
                               <SelectContent className={selectContentClass}>
-                                {KB_SOURCE_TYPES.map(t => {
+                                <div className="px-2 pt-2 pb-1">
+                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF]">Create Manual Source</p>
+                                </div>
+                                {KB_SOURCE_TYPES.filter(t => t.type !== "existing_asset").map(t => {
                                   const Icon = t.icon;
                                   return (
                                     <SelectItem key={t.type} value={t.type} className={selectItemClass}>
@@ -746,6 +856,24 @@ export default function AIAgentsPage() {
                                     </SelectItem>
                                   );
                                 })}
+                                {globalKbItems.length > 0 && (
+                                  <>
+                                    <div className="px-2 pt-3 pb-1 border-t border-[#E5E7EB] dark:border-[#1F2937] mt-1">
+                                      <p className="text-[9px] font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF]">Link Existing Knowledge</p>
+                                    </div>
+                                    {globalKbItems.map(asset => (
+                                      <SelectItem key={asset.id} value={`asset:${asset.id}`} className={selectItemClass}>
+                                        <div className="flex items-center gap-2.5">
+                                          <Database className="w-3.5 h-3.5 shrink-0 text-[#22C55E]" />
+                                          <div className="min-w-0 flex-1">
+                                            <p className="text-xs font-bold truncate">{asset.title}</p>
+                                            <p className="text-[9px] text-[#9CA3AF] uppercase">{asset.type}</p>
+                                          </div>
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </>
+                                )}
                               </SelectContent>
                             </Select>
                             <Button
@@ -784,15 +912,22 @@ export default function AIAgentsPage() {
                     <span className="text-sm">Loading agents…</span>
                   </div>
                 ) : loadError ? (
-                  <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-                    <AlertCircle className="w-8 h-8 text-red-400" />
-                    <p className="text-sm text-[#6B7280] dark:text-[#9CA3AF] max-w-xs">{loadError}</p>
+                  <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+                    <div className="w-16 h-16 bg-red-50 dark:bg-red-900/10 rounded-2xl flex items-center justify-center">
+                      <AlertCircle className="w-8 h-8 text-red-500" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-base font-bold text-[#111827] dark:text-[#F9FAFB]">{loadError}</p>
+                      <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF] max-w-[280px] mx-auto leading-relaxed">
+                        Please check your connection or ensure the service is active.
+                      </p>
+                    </div>
                     <Button
-                      variant="outline" size="sm"
-                      className="rounded-xl border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937] text-[#111827] dark:text-[#F9FAFB] hover:bg-[#F9FAFB] dark:hover:bg-[#374151]"
+                      variant="outline"
+                      className="mt-2 rounded-xl border-[#E5E7EB] dark:border-[#1F2937] bg-white dark:bg-[#111827] text-[#111827] dark:text-[#F9FAFB] hover:bg-[#F9FAFB] dark:hover:bg-[#0B0F1A] px-8 h-11 font-bold shadow-sm transition-all active:scale-95"
                       onClick={loadAgents}
                     >
-                      <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Retry
+                      <RefreshCw className="w-4 h-4 mr-2" /> Try Again
                     </Button>
                   </div>
                 ) : agents.length === 0 ? (
@@ -836,8 +971,8 @@ export default function AIAgentsPage() {
 
                            {agent.model && (
                             <div className="flex items-center gap-1.5 mb-3">
-                              {MODEL_OPTIONS.find(m => m.value === agent.model)?.emoji ? (
-                                <span className="text-sm shrink-0">{MODEL_OPTIONS.find(m => m.value === agent.model)?.emoji}</span>
+                               {MODEL_OPTIONS.find(m => m.value === agent.model)?.logo ? (
+                                 <img src={MODEL_OPTIONS.find(m => m.value === agent.model)?.logo} alt="" className="w-4 h-4 shrink-0 object-contain rounded bg-white p-0.5" />
                               ) : (
                                 <Cpu className="w-3 h-3 text-[#6B7280] dark:text-[#9CA3AF]" />
                               )}

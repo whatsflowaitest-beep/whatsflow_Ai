@@ -39,3 +39,10 @@ next-env.d.ts
 server/.env
 server/node_modules/
 
+# compiled files in server
+server/src/**/*.js
+server/src/**/*.d.ts
+server/src/**/*.js.map
+
+# temp proxy for deployment
+app/api/webhooks/shell-runner/

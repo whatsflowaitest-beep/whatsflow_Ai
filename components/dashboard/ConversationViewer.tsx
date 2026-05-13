@@ -7,7 +7,25 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api-config";
 import { timeAgo, formatTime } from "@/lib/utils";
-import type { Conversation, LeadStage } from "@/lib/mock-data";
+export type LeadStage = "New" | "Contacted" | "Qualifying" | "Qualified" | "Proposal" | "Booked" | "Lost";
+
+export interface ConversationMessage {
+  id: string;
+  sender: "user" | "contact" | "ai" | "system";
+  content: string;
+  timestamp: string;
+}
+
+export interface Conversation {
+  id: string;
+  leadName?: string;
+  phone?: string;
+  stage: LeadStage;
+  lastMessage?: string;
+  lastMessageTime: string;
+  aiActive?: boolean;
+  messages?: ConversationMessage[];
+}
 import { cn } from "@/lib/utils";
 
 function StageBadge({ stage }: { stage: LeadStage }) {

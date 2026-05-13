@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,6 +23,7 @@ import {
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/context/SidebarContext";
+import { createClient } from "@/lib/supabase/client";
 
 const navCategories = [
   {
@@ -53,6 +54,8 @@ const navCategories = [
     category: "System",
     items: [
       { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+      { label: "WhatsApp API", href: "/dashboard/whatsapp", icon: WhatsAppIcon },
+      { label: "API Logs", href: "/dashboard/logs", icon: BookOpen },
       { label: "Settings", href: "/dashboard/settings", icon: Settings },
       { label: "Support", href: "/dashboard/support", icon: LifeBuoy },
     ],
@@ -63,6 +66,35 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { isCollapsed, toggleSidebar } = useSidebar();
+  const [user, setUser] = useState<{ email?: string; name?: string } | null>(null);
+
+  useEffect(() => {
+    async function fetchUser() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser({
+          email: user.email,
+          name: user.user_metadata?.full_name || user.email?.split('@')[0] || "User",
+        });
+      }
+    }
+    fetchUser();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("Error during logout:", err);
+    } finally {
+      localStorage.removeItem("isLoggedIn");
+      window.location.href = "/";
+    }
+  };
+
+  const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || "?";
 
   return (
     <aside
@@ -110,7 +142,7 @@ export function Sidebar() {
       {/* Nav Section */}
       <nav className={cn(
         "flex-1 px-3 py-4 space-y-4 scrollbar-hide",
-        isCollapsed ? "overflow-hidden" : "overflow-y-auto"
+        isCollapsed ? "overflow-visible" : "overflow-y-auto"
       )}>
         {navCategories.map((category) => (
           <div key={category.category} className="space-y-1">
@@ -154,7 +186,9 @@ export function Sidebar() {
 
                   {/* Tooltip for collapsed state */}
                   {isCollapsed && (
-                    <div className="absolute left-full ml-2 px-2 py-1 bg-[#111827] dark:bg-white text-white dark:text-[#111827] text-xs font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
+                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 bg-white dark:bg-[#1F2937] text-[#111827] dark:text-[#F9FAFB] text-[11px] font-bold rounded-lg shadow-xl border border-[#E5E7EB] dark:border-[#374151] opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-x-[-8px] group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap z-50 pointer-events-none flex items-center">
+                      {/* Arrow */}
+                      <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-white dark:border-r-[#1F2937]" />
                       {item.label}
                     </div>
                   )}
@@ -184,7 +218,7 @@ export function Sidebar() {
           isCollapsed && "justify-center px-0"
         )}>
           <div className="w-9 h-9 rounded-full bg-[#22C55E] flex items-center justify-center shrink-0 shadow-sm text-white font-bold">
-            JD
+            {initials}
           </div>
           {!isCollapsed && (
             <>
@@ -194,17 +228,16 @@ export function Sidebar() {
                 className="flex-1 min-w-0"
               >
                 <p className="text-xs font-bold text-[#111827] dark:text-[#F9FAFB] truncate">
-                  John Doe
+                  {user?.name || "User"}
                 </p>
                 <p className="text-[10px] text-[#6B7280] dark:text-[#9CA3AF] truncate">
-                  john@business.com
+                  {user?.email || ""}
                 </p>
               </motion.div>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  localStorage.removeItem("isLoggedIn");
-                  router.push("/auth/login");
+                  handleLogout();
                 }}
                 className="p-1.5 rounded-md text-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-900/40 dark:hover:bg-red-800/50 hover:text-red-600 transition-all z-50 pointer-events-auto opacity-100 flex items-center justify-center shrink-0"
                 title="Logout"
@@ -216,17 +249,16 @@ export function Sidebar() {
           )}
 
           {isCollapsed && (
-            <div className="absolute left-full ml-2 px-2 py-1 bg-[#111827] dark:bg-white text-white dark:text-[#111827] text-xs font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
-              <p className="font-bold">John Doe</p>
-              <p className="opacity-70">john@business.com</p>
+            <div className="absolute left-full bottom-2 ml-3 p-3 bg-white dark:bg-[#1F2937] text-[#111827] dark:text-[#F9FAFB] rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-x-[-8px] group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap z-50 border border-[#E5E7EB] dark:border-[#374151]">
+              {/* Arrow */}
+              <div className="absolute right-full bottom-5 border-4 border-transparent border-r-white dark:border-r-[#1F2937]" />
+              <p className="text-xs font-bold">{user?.name || "User"}</p>
+              <p className="text-[10px] opacity-70 mb-2">{user?.email || ""}</p>
               <div 
-                onClick={() => {
-                  localStorage.removeItem("isLoggedIn");
-                  router.push("/auth/login");
-                }}
-                className="mt-1 pt-1 border-t border-white/20 dark:border-[#E5E7EB]/20 flex items-center gap-2 text-red-400 cursor-pointer hover:text-red-500"
+                onClick={handleLogout}
+                className="pt-2 border-t border-[#E5E7EB] dark:border-[#374151] flex items-center gap-2 text-red-400 dark:text-red-500 cursor-pointer hover:text-red-300 dark:hover:text-red-600 transition-colors text-xs font-bold"
               >
-                <LogOut className="w-3 h-3" />
+                <LogOut className="w-3.5 h-3.5" />
                 <span>Logout</span>
               </div>
             </div>

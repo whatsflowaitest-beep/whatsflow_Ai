@@ -1193,16 +1193,21 @@ function SettingsTab() {
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState({
     ai_enabled: true,
-    business_name: "SmilePlus Dental & Wellness",
-    industry: "dental",
+    ai_auto_pipeline: false,
+    business_name: "",
+    industry: "online",
     ai_tone: "friendly",
     escalation_threshold: 8,
     questions: defaultQuestions,
     reengagement_enabled: true,
     reengagement_window: "30min",
-    reengagement_message: "Hi {name}! 👋 Just checking in — were you still interested in booking an appointment? I can help you find the perfect time slot.",
+    reengagement_message: "Hi {name}! 👋 Just checking in — were you still interested in our previous chat?",
     reengagement_cap: 2,
-    booking_url: "https://calendly.com/smileplus-dental",
+    followup_enabled: true,
+    followup_window: "7d",
+    followup_stages: ["New", "Contacted"],
+    followup_message: "Hi {name}! 👋 Just checking back to see if you are still interested? Feel free to ask any questions!",
+    booking_url: "",
     qualification_gate: 3,
     confirmation_message: "Your appointment is confirmed! ✅ You'll receive a reminder 1 hour before. Looking forward to seeing you!",
     working_hours_enabled: false,
@@ -1211,13 +1216,28 @@ function SettingsTab() {
   });
 
   const [newQuestion, setNewQuestion] = useState("");
+  const [availableStages, setAvailableStages] = useState(["New", "Contacted", "Qualifying", "Qualified", "Proposal", "Booked", "Lost"]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("whatsflow_leads_pipeline");
+    if (stored) {
+      try {
+        const pipeline = JSON.parse(stored);
+        if (Array.isArray(pipeline) && pipeline.length > 0) {
+          setAvailableStages(pipeline.map((p: any) => p.stage));
+        }
+      } catch (e) {
+        console.error("Pipeline fallback failure:", e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     async function loadSettings() {
       try {
         const data = await apiFetch('/api/settings');
-        if (data && data.id) {
-          setSettings(data);
+        if (data && Object.keys(data).length > 0) {
+          setSettings(prev => ({ ...prev, ...data }));
         }
       } catch (err) {
         console.error("Failed to load settings:", err);
@@ -1273,6 +1293,12 @@ function SettingsTab() {
           description="Activate the AI to instantly handle incoming WhatsApp leads."
           checked={settings.ai_enabled}
           onCheckedChange={v => update("ai_enabled", v)}
+        />
+        <AutomationToggle
+          label="AI Auto Pipeline Status"
+          description="Let AI automatically advance lead pipeline stages based on conversation intent."
+          checked={settings.ai_auto_pipeline}
+          onCheckedChange={v => update("ai_auto_pipeline", v)}
         />
         <div className="space-y-2">
           <Label className="text-xs font-bold uppercase tracking-wider text-[#6B7B6B] dark:text-[#9CA3AF]">Business Profile Name</Label>
@@ -1399,6 +1425,63 @@ function SettingsTab() {
             onChange={e => update("reengagement_cap", parseInt(e.target.value))}
             min="1" max="5" className="h-11 rounded-xl bg-white dark:bg-[#0B0F1A] border-[#E2EDE2] dark:border-[#1F2937] text-[#0F1F0F] dark:text-[#F9FAFB]"
           />
+        </div>
+      </SectionCard>
+
+      {/* Mid-Stage Follow-up */}
+      <SectionCard title="Long-term Nurturing" description="Follow up with leads stuck mid-journey who haven't reached a final status yet." onSave={handleSave}>
+        <AutomationToggle
+          label="Mid-Stage Follow-up"
+          description="Revive interest from leads who went cold after starting."
+          checked={settings.followup_enabled}
+          onCheckedChange={v => update("followup_enabled", v)}
+        />
+        <div className="space-y-2">
+          <Label className="text-xs font-bold uppercase tracking-wider text-[#6B7B6B] dark:text-[#9CA3AF]">Follow-up Delay</Label>
+          <Select value={settings.followup_window} onValueChange={v => update("followup_window", v)}>
+            <SelectTrigger className="h-11 rounded-xl bg-white dark:bg-[#0B0F1A] border-[#E2EDE2] dark:border-[#1F2937] text-[#0F1F0F] dark:text-[#F9FAFB]"><SelectValue /></SelectTrigger>
+            <SelectContent className="bg-white dark:bg-[#111827] border-[#E2EDE2] dark:border-[#1F2937]">
+              <SelectItem value="1d">24 Hours later</SelectItem>
+              <SelectItem value="3d">3 Days later</SelectItem>
+              <SelectItem value="7d">1 Week later</SelectItem>
+              <SelectItem value="14d">2 Weeks later</SelectItem>
+              <SelectItem value="30d">1 Month later</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs font-bold uppercase tracking-wider text-[#6B7B6B] dark:text-[#9CA3AF]">Applies to Stages</Label>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {availableStages.map((stage) => {
+              const isSelected = (settings.followup_stages ?? []).includes(stage);
+              return (
+                <button
+                  key={stage}
+                  type="button"
+                  onClick={() => {
+                    const current = settings.followup_stages ?? [];
+                    const next = isSelected ? current.filter(s => s !== stage) : [...current, stage];
+                    update("followup_stages", next);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${isSelected 
+                    ? "bg-[#16A34A] border-[#16A34A] text-white shadow-md shadow-green-500/15 scale-105" 
+                    : "bg-white dark:bg-[#0B0F1A] border-[#E2EDE2] dark:border-[#1F2937] text-[#6B7B6B] dark:text-[#9CA3AF] hover:border-[#16A34A]/40"
+                  }`}
+                >
+                  {stage}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs font-bold uppercase tracking-wider text-[#6B7B6B] dark:text-[#9CA3AF]">Follow-up Message</Label>
+          <Textarea
+            value={settings.followup_message}
+            onChange={e => update("followup_message", e.target.value)}
+            className="text-sm resize-none rounded-xl bg-white dark:bg-[#0B0F1A] border-[#E2EDE2] dark:border-[#1F2937] text-[#0F1F0F] dark:text-[#F9FAFB] p-4" rows={3}
+          />
+          <p className="text-[10px] text-[#6B7B6B] dark:text-[#9CA3AF]">Will automatically trigger for leads stalled mid-conversation. Use &#123;name&#125; to personalize.</p>
         </div>
       </SectionCard>
 

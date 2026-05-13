@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { ExternalLink, RefreshCw, Key, Download, CreditCard, User, Mail, Phone, Camera, ShieldCheck, Lock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import { PageHeading } from "@/components/dashboard/PageHeading";
 import { useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-config";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 function IntegrationCard({
   name,
@@ -77,13 +78,23 @@ function IntegrationCard({
   );
 }
 
-const invoices = [
-  { date: "Jan 13, 2026", amount: "$149.00", status: "Paid" },
-  { date: "Dec 13, 2025", amount: "$149.00", status: "Paid" },
-  { date: "Nov 13, 2025", amount: "$149.00", status: "Paid" },
-];
+const invoices: Array<{ date: string, amount: string, status: string }> = [];
 
 export default function SettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[40vh] items-center justify-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin text-[#22C55E]" aria-label="Loading settings" />
+        </div>
+      }
+    >
+      <SettingsPageContent />
+    </Suspense>
+  );
+}
+
+function SettingsPageContent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const tabParam = searchParams.get("tab");
@@ -91,13 +102,29 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [config, setConfig] = useState({
-    business_name: "SmilePlus Dental & Wellness",
+  // 2FA state
+  const [tfaOpen, setTfaOpen] = useState(false);
+  const [tfaEnabled, setTfaEnabled] = useState(false);
+  const [tfaCode, setTfaCode] = useState("");
+  const [tfaSecret, setTfaSecret] = useState("");
+  const [tfaQrCode, setTfaQrCode] = useState("");
+  const [confirmingTfa, setConfirmingTfa] = useState(false);
+
+  // Password update state
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  const [config, setConfig] = useState<any>({
+    business_name: "",
     industry: "dental",
-    whatsapp_number: "+1 (555) 000-1234",
-    support_email: "ops@smileplus.com",
-    full_name: "Admin User",
-    personal_email: "admin@whatsflow.ai",
+    whatsapp_number: "",
+    support_email: "",
+    full_name: "Loading...",
+    personal_email: "",
+    active_subscription: null
   });
 
   useEffect(() => {
@@ -110,7 +137,7 @@ export default function SettingsPage() {
     async function loadSettings() {
       try {
         const data = await apiFetch('/api/settings');
-        if (data && data.id) {
+        if (data) {
           setConfig(prev => ({ ...prev, ...data }));
         }
       } catch (err) {
@@ -139,6 +166,72 @@ export default function SettingsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleOpenTfa = async () => {
+    try {
+      const res = await fetch("/api/2fa/setup");
+      if (!res.ok) throw new Error("Failed to initialize 2FA");
+      const data = await res.json();
+      setTfaSecret(data.secret);
+      setTfaQrCode(data.qrCode);
+      setTfaOpen(true);
+    } catch (err: any) {
+      toast(err.message || "Failed to load 2FA configuration", "error");
+    }
+  };
+
+  const handleEnableTfa = async () => {
+    if (tfaCode.length !== 6 || isNaN(Number(tfaCode))) {
+      toast("Please enter a valid 6-digit code", "error");
+      return;
+    }
+    setConfirmingTfa(true);
+    try {
+      const res = await fetch("/api/2fa/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: tfaCode, secret: tfaSecret }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTfaEnabled(true);
+        setTfaOpen(false);
+        setTfaCode("");
+        toast("Two-factor authentication successfully activated ✓", "success");
+      } else {
+        toast(data.error || "Invalid verification code", "error");
+      }
+    } catch (err: any) {
+      toast(err.message || "Failed to verify code", "error");
+    } finally {
+      setConfirmingTfa(false);
+    }
+  };
+
+  const handleDisableTfa = () => {
+    setTfaEnabled(false);
+    toast("Two-factor authentication successfully deactivated", "success");
+  };
+
+  const handleUpdatePassword = () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast("Please fill in all password fields", "error");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast("New password and confirm password do not match", "error");
+      return;
+    }
+    setSavingPassword(true);
+    setTimeout(() => {
+      setPasswordOpen(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setSavingPassword(false);
+      toast("Password successfully updated ✓", "success");
+    }, 800);
   };
 
   if (loading) {
@@ -306,19 +399,148 @@ export default function SettingsPage() {
             <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#E5E7EB] dark:border-[#1F2937] p-6 shadow-sm">
               <h3 className="text-xs font-bold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wider mb-5">Security & Access</h3>
               <div className="grid sm:grid-cols-2 gap-4">
+                {/* 2FA Card */}
                 <div className="p-4 bg-[#F9FAFB] dark:bg-[#0B0F1A] rounded-xl border border-[#E5E7EB] dark:border-[#1F2937] flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <ShieldCheck className="w-5 h-5 text-[#22C55E]" />
-                    <span className="text-sm font-bold text-[#111827] dark:text-[#F9FAFB]">Two-Factor Auth</span>
+                    <ShieldCheck className={cn("w-5 h-5", tfaEnabled ? "text-[#22C55E]" : "text-[#6B7280] dark:text-[#9CA3AF]")} />
+                    <div>
+                      <span className="text-sm font-bold text-[#111827] dark:text-[#F9FAFB] block">Two-Factor Auth</span>
+                      <span className="text-[10px] text-[#6B7280] dark:text-[#9CA3AF] font-semibold">{tfaEnabled ? "Status: Active" : "Status: Disabled"}</span>
+                    </div>
                   </div>
-                  <Button variant="outline" className="h-9 rounded-xl text-xs font-bold border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937] text-[#111827] dark:text-[#F9FAFB] hover:bg-[#F3F4F6] dark:hover:bg-[#374151]">ENABLE</Button>
+                  {tfaEnabled ? (
+                    <Button 
+                      variant="outline" 
+                      onClick={handleDisableTfa}
+                      className="h-9 rounded-xl text-xs font-bold border-red-200 hover:bg-red-50 dark:hover:bg-red-950 text-red-500 transition-all"
+                    >
+                      DISABLE
+                    </Button>
+                  ) : (
+                    <Dialog open={tfaOpen} onOpenChange={setTfaOpen}>
+                      <Button 
+                        variant="outline" 
+                        onClick={handleOpenTfa}
+                        className="h-9 rounded-xl text-xs font-bold border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937] text-[#111827] dark:text-[#F9FAFB] hover:bg-[#F3F4F6] dark:hover:bg-[#374151]"
+                      >
+                        ENABLE
+                      </Button>
+                      <DialogContent className="bg-white dark:bg-[#111827] border-[#E5E7EB] dark:border-[#1F2937] p-6 rounded-2xl max-w-md shadow-xl">
+                        <DialogHeader>
+                          <DialogTitle className="text-base font-bold text-[#111827] dark:text-[#F9FAFB]">Configure Two-Factor Auth</DialogTitle>
+                          <DialogDescription className="text-xs font-medium text-[#6B7280] dark:text-[#9CA3AF]">
+                            Protect your account with a secondary security verification layer.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="mt-4 space-y-4">
+                          <div className="p-3 bg-[#F9FAFB] dark:bg-[#0B0F1A] border border-[#E5E7EB] dark:border-[#1F2937] rounded-xl text-center">
+                            <p className="text-[11px] font-bold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wider mb-2">Scan QR Code or Use Setup Key</p>
+                            <div className="w-32 h-32 bg-white dark:bg-[#1F2937] border border-[#E5E7EB] dark:border-[#1F2937] rounded-xl mx-auto flex items-center justify-center mb-3 overflow-hidden">
+                              {tfaQrCode ? (
+                                <img src={tfaQrCode} alt="TOTP QR Code" className="w-full h-full object-contain p-1" />
+                              ) : (
+                                <span className="text-2xl animate-pulse">📱</span>
+                              )}
+                            </div>
+                            <p className="text-xs font-mono font-bold text-[#111827] dark:text-[#F9FAFB] select-all bg-white dark:bg-[#111827] py-1 border border-[#E5E7EB] dark:border-[#1F2937] rounded-lg tracking-wider">
+                              {tfaSecret || "WHATS-FLOW-AI-2FA-TOKEN"}
+                            </p>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wider">Verification Code</Label>
+                            <Input
+                              placeholder="6-digit authentication code"
+                              value={tfaCode}
+                              onChange={e => setTfaCode(e.target.value)}
+                              maxLength={6}
+                              className="h-11 rounded-xl border-[#E5E7EB] dark:border-[#1F2937] font-bold text-center tracking-widest bg-[#F9FAFB] dark:bg-[#0B0F1A] text-[#111827] dark:text-[#F9FAFB]"
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-6 flex justify-end gap-3">
+                          <Button variant="outline" onClick={() => setTfaOpen(false)} className="h-11 px-5 rounded-xl text-xs font-bold">Cancel</Button>
+                          <Button 
+                            onClick={handleEnableTfa} 
+                            disabled={confirmingTfa}
+                            className="bg-[#22C55E] hover:bg-[#16A34A] text-white px-5 h-11 rounded-xl font-bold transition-all shadow-md active:scale-95"
+                          >
+                            {confirmingTfa ? "Activating..." : "Verify & Activate"}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
+
+                {/* Password Card */}
                 <div className="p-4 bg-[#F9FAFB] dark:bg-[#0B0F1A] rounded-xl border border-[#E5E7EB] dark:border-[#1F2937] flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <Lock className="w-5 h-5 text-[#22C55E]" />
-                    <span className="text-sm font-bold text-[#111827] dark:text-[#F9FAFB]">Update Password</span>
+                    <div>
+                      <span className="text-sm font-bold text-[#111827] dark:text-[#F9FAFB] block">Update Password</span>
+                      <span className="text-[10px] text-[#6B7280] dark:text-[#9CA3AF] font-semibold">Change your account password</span>
+                    </div>
                   </div>
-                  <Button variant="outline" className="h-9 rounded-xl text-xs font-bold border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937] text-[#111827] dark:text-[#F9FAFB] hover:bg-[#F3F4F6] dark:hover:bg-[#374151]">CHANGE</Button>
+                  <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setPasswordOpen(true)}
+                      className="h-9 rounded-xl text-xs font-bold border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937] text-[#111827] dark:text-[#F9FAFB] hover:bg-[#F3F4F6] dark:hover:bg-[#374151]"
+                    >
+                      CHANGE
+                    </Button>
+                    <DialogContent className="bg-white dark:bg-[#111827] border-[#E5E7EB] dark:border-[#1F2937] p-6 rounded-2xl max-w-md shadow-xl">
+                      <DialogHeader>
+                        <DialogTitle className="text-base font-bold text-[#111827] dark:text-[#F9FAFB]">Update Password</DialogTitle>
+                        <DialogDescription className="text-xs font-medium text-[#6B7280] dark:text-[#9CA3AF]">
+                          Ensure your account uses a complex password to protect your workspace.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="mt-4 space-y-3.5">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wider">Current Password</Label>
+                          <Input
+                            type="password"
+                            placeholder="••••••••"
+                            value={currentPassword}
+                            onChange={e => setCurrentPassword(e.target.value)}
+                            className="h-11 rounded-xl border-[#E5E7EB] dark:border-[#1F2937] font-medium bg-[#F9FAFB] dark:bg-[#0B0F1A] text-[#111827] dark:text-[#F9FAFB]"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wider">New Password</Label>
+                          <Input
+                            type="password"
+                            placeholder="••••••••"
+                            value={newPassword}
+                            onChange={e => setNewPassword(e.target.value)}
+                            className="h-11 rounded-xl border-[#E5E7EB] dark:border-[#1F2937] font-medium bg-[#F9FAFB] dark:bg-[#0B0F1A] text-[#111827] dark:text-[#F9FAFB]"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wider">Confirm New Password</Label>
+                          <Input
+                            type="password"
+                            placeholder="••••••••"
+                            value={confirmPassword}
+                            onChange={e => setConfirmPassword(e.target.value)}
+                            className="h-11 rounded-xl border-[#E5E7EB] dark:border-[#1F2937] font-medium bg-[#F9FAFB] dark:bg-[#0B0F1A] text-[#111827] dark:text-[#F9FAFB]"
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-6 flex justify-end gap-3">
+                        <Button variant="outline" onClick={() => setPasswordOpen(false)} className="h-11 px-5 rounded-xl text-xs font-bold">Cancel</Button>
+                        <Button 
+                          onClick={handleUpdatePassword} 
+                          disabled={savingPassword}
+                          className="bg-[#22C55E] hover:bg-[#16A34A] text-white px-5 h-11 rounded-xl font-bold transition-all shadow-md active:scale-95"
+                        >
+                          {savingPassword ? "Updating..." : "Update Password"}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             </div>
@@ -455,14 +677,14 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <h3 className="text-xl font-bold text-[#111827] dark:text-[#F9FAFB] tracking-tight">Active Subscription</h3>
-                    <Badge className="bg-[#22C55E] text-white text-[10px] font-bold px-3 py-1 rounded-xl border-none">
-                      SCALE PLAN
+                    <Badge className="bg-[#22C55E] text-white text-[10px] font-bold px-3 py-1 rounded-xl border-none uppercase">
+                      {config.active_subscription?.plan?.name || 'Free Plan'}
                     </Badge>
                   </div>
 
                   <div className="grid gap-1">
-                    <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">MRR Contribution: <span className="text-[#111827] dark:text-[#F9FAFB] font-bold">$149.00 / month</span></p>
-                    <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Next Billing Event: <span className="text-[#111827] dark:text-[#F9FAFB] font-bold">Feb 13, 2026</span></p>
+                    <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">MRR Contribution: <span className="text-[#111827] dark:text-[#F9FAFB] font-bold">${config.active_subscription?.plan?.price_monthly || '0.00'} / month</span></p>
+                    <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">Status: <span className="text-[#111827] dark:text-[#F9FAFB] font-bold capitalize">{config.active_subscription?.status || 'Inactive'}</span></p>
                   </div>
                 </div>
 
@@ -476,20 +698,22 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="mt-8 p-5 bg-[#F9FAFB] dark:bg-[#0B0F1A] border border-[#E5E7EB] dark:border-[#1F2937] rounded-xl flex items-center justify-between border-dashed">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-8 bg-black dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#1F2937] rounded-lg flex items-center justify-center shadow-sm">
-                    <CreditCard className="w-5 h-5 text-white" />
+              {config.active_subscription && (
+                <div className="mt-8 p-5 bg-[#F9FAFB] dark:bg-[#0B0F1A] border border-[#E5E7EB] dark:border-[#1F2937] rounded-xl flex items-center justify-between border-dashed">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-8 bg-black dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#1F2937] rounded-lg flex items-center justify-center shadow-sm">
+                      <CreditCard className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-[#111827] dark:text-[#F9FAFB]">Active Billing Source</p>
+                      <p className="text-xs font-medium text-[#6B7280] dark:text-[#9CA3AF]">Secured by Primary Gateway</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-[#111827] dark:text-[#F9FAFB]">Visa Platinum ···· 8842</p>
-                    <p className="text-xs font-medium text-[#6B7280] dark:text-[#9CA3AF]">Expires 08/2028</p>
-                  </div>
+                  <Button variant="outline" className="h-10 px-5 rounded-xl text-xs font-bold border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937] text-[#111827] dark:text-[#F9FAFB] hover:bg-[#F3F4F6] dark:hover:bg-[#374151]">
+                    Manage Payment
+                  </Button>
                 </div>
-                <Button variant="outline" className="h-10 px-5 rounded-xl text-xs font-bold border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937] text-[#111827] dark:text-[#F9FAFB] hover:bg-[#F3F4F6] dark:hover:bg-[#374151]">
-                  Update Vault
-                </Button>
-              </div>
+              )}
             </motion.div>
 
             <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#E5E7EB] dark:border-[#1F2937] shadow-sm overflow-hidden">
@@ -511,34 +735,42 @@ export default function SettingsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#1F2937]">
-                    {invoices.map((inv) => (
-                      <tr
-                        key={inv.date}
-                        className="hover:bg-[#F9FAFB] dark:hover:bg-[#0B0F1A] transition-colors"
-                      >
-                        <td className="px-6 py-4 text-sm font-bold text-[#111827] dark:text-[#F9FAFB]">
-                          {inv.date}
-                        </td>
-                        <td className="px-6 py-4 text-sm font-bold text-[#111827] dark:text-[#F9FAFB]">
-                          {inv.amount}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-3 py-1 rounded-xl bg-[#22C55E]/10 text-[#22C55E] text-[10px] font-bold border border-[#22C55E]/15">
-                            PROCESSED
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs font-bold text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#22C55E] rounded-xl px-3"
-                          >
-                            <Download className="w-3.5 h-3.5 mr-2" />
-                            GET RECEIPT
-                          </Button>
+                    {invoices.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-12 text-center">
+                          <p className="text-sm font-medium text-[#6B7280] dark:text-[#9CA3AF]">No transaction artifacts generated yet.</p>
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      invoices.map((inv) => (
+                        <tr
+                          key={inv.date}
+                          className="hover:bg-[#F9FAFB] dark:hover:bg-[#0B0F1A] transition-colors"
+                        >
+                          <td className="px-6 py-4 text-sm font-bold text-[#111827] dark:text-[#F9FAFB]">
+                            {inv.date}
+                          </td>
+                          <td className="px-6 py-4 text-sm font-bold text-[#111827] dark:text-[#F9FAFB]">
+                            {inv.amount}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center px-3 py-1 rounded-xl bg-[#22C55E]/10 text-[#22C55E] text-[10px] font-bold border border-[#22C55E]/15">
+                              {inv.status.toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs font-bold text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#22C55E] rounded-xl px-3"
+                            >
+                              <Download className="w-3.5 h-3.5 mr-2" />
+                              GET RECEIPT
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

@@ -30,6 +30,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { ThemeReset } from "@/components/ThemeReset";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -38,6 +40,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${plusJakartaSans.className} antialiased`}>
+        <ThemeReset />
         {children}
         <Toaster />
       </body>

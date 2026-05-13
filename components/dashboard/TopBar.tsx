@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Menu, User, Settings, Smartphone, QrCode, CheckCircle2, Loader2, AlertCircle, Sun, Moon } from "lucide-react";
+import { Search, Menu, User, Settings, QrCode, CheckCircle2, Loader2, AlertCircle, Sun, Moon } from "lucide-react";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -104,7 +104,11 @@ export function TopBar() {
             <Button
               className="bg-[#22C55E] hover:bg-[#16A34A] text-white gap-2 rounded-xl h-9 px-4 shadow-lg shadow-green-500/15 transition-all active:scale-[0.98] hidden lg:flex font-semibold text-xs shrink-0"
             >
-              <Smartphone className="w-4 h-4" />
+              <img 
+                src="https://img.icons8.com/external-tanah-basah-glyph-tanah-basah/48/external-meta-social-media-tanah-basah-glyph-tanah-basah.png" 
+                className="w-4 h-4 brightness-0 invert" 
+                alt="Meta" 
+              />
               Connect WhatsApp
             </Button>
           </DialogTrigger>
@@ -112,7 +116,11 @@ export function TopBar() {
             <div className="bg-[#22C55E] p-8 text-white relative overflow-hidden">
               <div className="relative z-10">
                 <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm">
-                  <Smartphone className="w-6 h-6 text-white" />
+                  <img 
+                    src="https://img.icons8.com/external-tanah-basah-glyph-tanah-basah/48/external-meta-social-media-tanah-basah-glyph-tanah-basah.png" 
+                    className="w-6 h-6 brightness-0 invert" 
+                    alt="Meta" 
+                  />
                 </div>
                 <h2 className="text-2xl font-bold mb-2">Connect your WhatsApp</h2>
                 <p className="text-white/80 text-sm leading-relaxed max-w-[280px]">
@@ -312,7 +320,7 @@ export function TopBar() {
             <motion.div
               animate={{ x: mounted && theme === "dark" ? 28 : 0 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              className="w-5.5 h-5.5 flex items-center justify-center bg-white dark:bg-[#22C55E] rounded-full shadow-md transition-colors duration-300"
+              className="w-[22px] h-[22px] flex items-center justify-center bg-white dark:bg-[#22C55E] rounded-full shadow-md transition-colors duration-300"
             >
               <AnimatePresence mode="wait" initial={false}>
                 {mounted && theme === "dark" ? (
@@ -356,12 +364,8 @@ export function TopBar() {
 
         <button
           onClick={() => router.push('/dashboard/settings?tab=profile')}
-          className="flex items-center gap-2 p-1 pl-2 hover:bg-gray-50 dark:hover:bg-[#111827] rounded-full transition-colors border border-transparent hover:border-[#E5E7EB] dark:hover:border-[#1F2937]"
+          className="flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-[#111827] rounded-full transition-colors border border-transparent hover:border-[#E5E7EB] dark:hover:border-[#1F2937]"
         >
-          <div className="flex flex-col items-end hidden sm:flex">
-            <span className="text-[11px] font-bold text-[#111827] dark:text-[#F9FAFB] leading-none">Admin User</span>
-            <span className="text-[9px] text-[#6B7280] dark:text-[#9CA3AF] leading-none mt-0.5">WhatsFlow Agency</span>
-          </div>
           <div className="w-8 h-8 rounded-full bg-[#22C55E] flex items-center justify-center text-white shadow-sm ring-2 ring-white dark:ring-[#111827]">
             <User className="w-4 h-4" />
           </div>

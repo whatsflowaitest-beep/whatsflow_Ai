@@ -225,7 +225,10 @@ export function LeadsTable({
                   {/* Avatar + Name */}
                   <td className="px-3 py-4">
                     <div className="flex items-center gap-3">
-                      <div className={cn("w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm border-2 border-white dark:border-[#111827]", lead.avatarColor)}>
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm border-2 border-white dark:border-[#111827] !bg-[#22C55E]"
+                        style={{ backgroundColor: "#22C55E" }}
+                      >
                         <span className="text-white text-xs font-bold leading-none">
                           {lead.name.charAt(0).toUpperCase()}
                         </span>
@@ -323,7 +326,7 @@ export function LeadsTable({
               size="sm"
               disabled={page === 0}
               onClick={() => setPage(page - 1)}
-              className="h-8 px-3 text-xs font-bold border-[#E5E7EB] dark:border-[#1F2937] hover:bg-white dark:hover:bg-[#111827] transition-all disabled:opacity-40"
+              className="h-8 px-3 text-xs font-bold border-[#E5E7EB] dark:border-[#1F2937] bg-white dark:bg-[#111827] text-[#111827] dark:text-[#F9FAFB] hover:bg-[#F9FAFB] dark:hover:bg-[#0B0F1A] transition-all disabled:opacity-30"
             >
               Prev
             </Button>
@@ -350,7 +353,7 @@ export function LeadsTable({
               size="sm"
               disabled={page === totalPages - 1}
               onClick={() => setPage(page + 1)}
-              className="h-8 px-3 text-xs font-bold border-[#E5E7EB] dark:border-[#1F2937] hover:bg-white dark:hover:bg-[#111827] transition-all disabled:opacity-40"
+              className="h-8 px-3 text-xs font-bold border-[#E5E7EB] dark:border-[#1F2937] bg-white dark:bg-[#111827] text-[#111827] dark:text-[#F9FAFB] hover:bg-[#F9FAFB] dark:hover:bg-[#0B0F1A] transition-all disabled:opacity-30"
             >
               Next
             </Button>

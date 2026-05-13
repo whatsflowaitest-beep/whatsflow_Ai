@@ -40,7 +40,10 @@ export function ViewLeadDrawer({ lead, open, onClose, onEdit, onDelete }: Props)
         {/* Header */}
         <div className="p-6 border-b border-[#F0F7F0] shrink-0 relative">
           <div className="flex flex-col items-center text-center mt-4">
-            <div className={cn("w-20 h-20 rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-inner ring-4 ring-white", lead.avatarColor)}>
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-inner ring-4 ring-white bg-[#22C55E]"
+              style={{ backgroundColor: "#22C55E" }}
+            >
               {lead.name.charAt(0).toUpperCase()}
             </div>
             <h2 className="text-2xl font-bold text-[#0F1F0F] mt-3">{lead.name}</h2>
