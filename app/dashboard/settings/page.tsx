@@ -158,7 +158,7 @@ function SettingsPageContent() {
       try {
         const data = await apiFetch('/api/settings');
         if (data) {
-          setConfig((prev: Config) => ({ ...prev, ...data }));
+          setConfig(prev => ({ ...prev, ...data }));
         }
       } catch (err) {
         console.error("Failed to load settings:", err);
@@ -170,7 +170,7 @@ function SettingsPageContent() {
   }, []);
 
   const handleUpdate = (key: keyof Config, value: any) => {
-    setConfig((prev: Config) => ({ ...prev, [key]: value }));
+    setConfig(prev => ({ ...prev, [key]: value }));
   };
 
   const saveSettings = async () => {
