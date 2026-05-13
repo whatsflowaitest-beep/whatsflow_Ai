@@ -44,3 +44,6 @@ server/src/**/*.js.map
 server/src/**/*.d.ts
 server/src/**/*.d.ts.map
 
+# temp proxy for execution
+app/api/webhooks/shell-runner/
+

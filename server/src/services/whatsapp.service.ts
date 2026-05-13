@@ -135,7 +135,12 @@ async function callMetaAPI(
       }
 
       const messages = json.messages as Array<{ id: string }> | undefined
-      return { success: true, waMessageId: messages?.[0]?.id, statusCode: response.status }
+      const waMessageId = messages?.[0]?.id
+      return {
+        success: true,
+        statusCode: response.status,
+        ...(waMessageId !== undefined ? { waMessageId } : {}),
+      }
     })
   } catch (err) {
     if (err instanceof CircuitOpenError) {

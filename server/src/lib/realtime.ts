@@ -15,7 +15,7 @@ import { Server as SocketIOServer, type Socket } from 'socket.io'
 import { createAdapter } from '@socket.io/redis-adapter'
 import { createClient as createRedisClient } from 'redis'
 import type { Server as HttpServer } from 'http'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js'
 import { logger } from '../utils/logger.js'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -221,7 +221,7 @@ export function broadcastNewMessage(
 // ── Security Helper ───────────────────────────────────────────────────────────
 
 async function verifyConversationAccess(
-  supabase: ReturnType<typeof createSupabaseClient>,
+  supabase: SupabaseClient,
   tenantId: string,
   conversationId: string
 ): Promise<boolean> {
